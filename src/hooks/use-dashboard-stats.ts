@@ -137,7 +137,11 @@ export function useDashboardStats() {
     return {
       counts,
       classroomGroups,
-      recentSubmissions: recentSubmissions || []
+      recentSubmissions: (recentSubmissions || []).map(sub => ({
+        ...sub,
+        profiles: Array.isArray(sub.profiles) ? sub.profiles[0] : sub.profiles,
+        exams: Array.isArray(sub.exams) ? sub.exams[0] : sub.exams
+      })) as RecentSubmission[]
     }
   }, {
     refreshInterval: 5000 // Refresh every 5 seconds
