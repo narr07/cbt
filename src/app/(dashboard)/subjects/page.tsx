@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { Plus, BookOpen, Trash2, Search, X } from 'lucide-react'
+import { toast } from 'sonner'
 
 // Shadcn UI Components
 import { Button } from '@/components/ui/button'
@@ -24,6 +25,16 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 interface Subject {
   id: string
@@ -37,7 +48,8 @@ export default function SubjectsPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [newSubjectName, setNewSubjectName] = useState('')
-  const [issubmitting, setIsSubmitting] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [deleteId, setDeleteId] = useState<string | null>(null)
 
   const supabase = createClient()
 
@@ -70,8 +82,9 @@ export default function SubjectsPage() {
       .insert([{ name: newSubjectName.trim() }])
 
     if (error) {
-      alert('Gagal menambah mata pelajaran: ' + error.message)
+      toast.error('Gagal menambah mata pelajaran: ' + error.message)
     } else {
+      toast.success('Mata pelajaran berhasil ditambahkan!')
       setNewSubjectName('')
       setIsModalOpen(false)
       fetchSubjects()
@@ -80,18 +93,24 @@ export default function SubjectsPage() {
   }
 
   const handleDeleteSubject = async (id: string) => {
-    if (!confirm('Apakah Anda yakin ingin menghapus mata pelajaran ini?')) return
+    setDeleteId(id)
+  }
+
+  const confirmDeleteSubject = async () => {
+    if (!deleteId) return
 
     const { error } = await supabase
       .from('subjects')
       .delete()
-      .eq('id', id)
+      .eq('id', deleteId)
 
     if (error) {
-      alert('Gagal menghapus: ' + error.message)
+      toast.error('Gagal menghapus: ' + error.message)
     } else {
+      toast.success('Mata pelajaran berhasil dihapus')
       fetchSubjects()
     }
+    setDeleteId(null)
   }
 
   const filteredSubjects = subjects.filter(s =>
@@ -233,15 +252,35 @@ export default function SubjectsPage() {
               </Button>
               <Button
                 type="submit"
-                disabled={issubmitting}
+                disabled={isSubmitting}
                 className="flex-1"
               >
-                {issubmitting ? <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" /> : 'Simpan'}
+                {isSubmitting ? <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" /> : 'Simpan'}
               </Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+        <AlertDialogContent className="rounded-3xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus Mata Pelajaran?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Apakah Anda yakin ingin menghapus mata pelajaran ini? Tindakan ini tidak dapat dibatalkan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-xl border-none bg-secondary">Batal</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteSubject}
+              className="rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Ya, Hapus Mapel
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

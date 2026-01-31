@@ -17,6 +17,17 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 // Shadcn UI Components
 import { Button } from '@/components/ui/button'
@@ -66,6 +77,7 @@ export default function ExamEditorPage({ params }: { params: Promise<{ id: strin
   const [publishing, setPublishing] = useState(false)
   const [uploadingId, setUploadingId] = useState<string | null>(null)
   const [previewingQuestion, setPreviewingQuestion] = useState<Question | null>(null)
+  const [showPublishDialog, setShowPublishDialog] = useState(false)
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -146,7 +158,7 @@ export default function ExamEditorPage({ params }: { params: Promise<{ id: strin
 
       setQuestions(questions.map(q => q.id === qId ? { ...q, image_url: publicUrl } : q))
     } catch (err: any) {
-      alert('Gagal upload gambar: ' + err.message)
+      toast.error('Gagal upload gambar: ' + err.message)
     } finally {
       setUploadingId(null)
     }
@@ -229,19 +241,22 @@ export default function ExamEditorPage({ params }: { params: Promise<{ id: strin
         }
       }
 
-      alert('Berhasil menyimpan draft!')
+      toast.success('Berhasil menyimpan draft!')
       fetchData()
     } catch (err: any) {
-      alert('Gagal menyimpan: ' + err.message)
+      toast.error('Gagal menyimpan: ' + err.message)
     } finally {
       setSaving(false)
     }
   }
 
   const handlePublish = async () => {
-    if (!confirm('Publikasikan ujian ini? Siswa akan bisa melihat dan mengerjakannya.')) return
+    setShowPublishDialog(true)
+  }
 
+  const confirmPublish = async () => {
     setPublishing(true)
+    setShowPublishDialog(false)
     try {
       const { error } = await supabase
         .from('exams')
@@ -249,10 +264,10 @@ export default function ExamEditorPage({ params }: { params: Promise<{ id: strin
         .eq('id', id)
 
       if (error) throw error
-      alert('Ujian berhasil dipublikasikan!')
+      toast.success('Ujian berhasil dipublikasikan!')
       router.push('/exams')
     } catch (err: any) {
-      alert('Gagal publikasi: ' + err.message)
+      toast.error('Gagal publikasi: ' + err.message)
     } finally {
       setPublishing(false)
     }
@@ -484,6 +499,26 @@ export default function ExamEditorPage({ params }: { params: Promise<{ id: strin
            <span className="font-bold text-xs text-muted-foreground uppercase tracking-widest">Tambah Soal Baru</span>
         </Button>
       </div>
+
+      <AlertDialog open={showPublishDialog} onOpenChange={setShowPublishDialog}>
+        <AlertDialogContent className="rounded-3xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Publikasikan Ujian?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Ujian yang telah dipublikasikan akan muncul di panel siswa dan dapat langsung dikerjakan. Pastikan semua soal telah diatur dengan benar.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-xl border-none bg-secondary">Batal</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmPublish}
+              className="rounded-xl bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              Ya, Publikasikan
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

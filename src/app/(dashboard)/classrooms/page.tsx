@@ -8,6 +8,7 @@ import {
   Trash2,
   Eye
 } from 'lucide-react'
+import { toast } from 'sonner'
 import Link from 'next/link'
 
 // Shadcn UI Components
@@ -23,6 +24,16 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import {
   Dialog,
   DialogContent,
@@ -52,7 +63,8 @@ export default function ClassroomsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [newClassName, setNewClassName] = useState('')
   const [newGradeLevel, setNewGradeLevel] = useState('6')
-  const [issubmitting, setIsSubmitting] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [deleteId, setDeleteId] = useState<string | null>(null)
 
   const supabase = createClient()
 
@@ -88,8 +100,9 @@ export default function ClassroomsPage() {
       }])
 
     if (error) {
-      alert('Gagal menambah kelas: ' + error.message)
+      toast.error('Gagal menambah kelas: ' + error.message)
     } else {
+      toast.success('Kelas berhasil ditambahkan!')
       setNewClassName('')
       setIsModalOpen(false)
       fetchClassrooms()
@@ -98,18 +111,24 @@ export default function ClassroomsPage() {
   }
 
   const handleDeleteClassroom = async (id: string) => {
-    if (!confirm('Apakah Anda yakin ingin menghapus kelas ini? Semua data siswa di dalamnya mungkin terpengaruh.')) return
+    setDeleteId(id)
+  }
+
+  const confirmDelete = async () => {
+    if (!deleteId) return
 
     const { error } = await supabase
       .from('classrooms')
       .delete()
-      .eq('id', id)
+      .eq('id', deleteId)
 
     if (error) {
-      alert('Gagal menghapus: ' + error.message)
+      toast.error('Gagal menghapus: ' + error.message)
     } else {
+      toast.success('Kelas berhasil dihapus')
       fetchClassrooms()
     }
+    setDeleteId(null)
   }
 
   const filteredClassrooms = classrooms.filter(c =>
@@ -266,8 +285,8 @@ export default function ClassroomsPage() {
               >
                 Batal
               </Button>
-              <Button type="submit" disabled={issubmitting}>
-                {issubmitting ? (
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? (
                   <div className="w-5 h-5 border-2 border-primary-foreground/20 border-t-primary-foreground rounded-full animate-spin" />
                 ) : (
                   'Simpan'
@@ -277,6 +296,26 @@ export default function ClassroomsPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+        <AlertDialogContent className="rounded-3xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus Kelas?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Apakah Anda yakin ingin menghapus kelas ini? Semua data siswa di dalamnya akan ikut terpengaruh. Tindakan ini tidak dapat dibatalkan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-xl border-none bg-secondary">Batal</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Ya, Hapus Kelas
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

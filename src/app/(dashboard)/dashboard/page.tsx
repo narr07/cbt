@@ -19,6 +19,7 @@ import {
   RotateCcw
 } from 'lucide-react'
 import Link from 'next/link'
+import { toast } from 'sonner'
 
 // Shadcn UI Components
 import { Button } from '@/components/ui/button'
@@ -32,6 +33,16 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 interface StatItem {
   id: string
@@ -58,6 +69,7 @@ export default function DashboardPage() {
   const [recentExams, setRecentExams] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [collapsedClassrooms, setCollapsedClassrooms] = useState<Record<string, boolean>>({})
+  const [resetStudent, setResetStudent] = useState<{ id: string, name: string } | null>(null)
 
   const fetchDashboardData = useCallback(async () => {
     try {
@@ -164,16 +176,21 @@ export default function DashboardPage() {
   }
 
   const handleResetSubmission = async (studentName: string, studentId: string) => {
-    if (!confirm(`Yakin ingin RESET ujian siswa "${studentName}"? Semua jawaban akan dihapus.`)) return
+    setResetStudent({ id: studentId, name: studentName })
+  }
+
+  const confirmResetSubmission = async () => {
+    if (!resetStudent) return
 
     // Delete all submissions for this student
-    const { error } = await supabase.from('submissions').delete().eq('student_id', studentId)
+    const { error } = await supabase.from('submissions').delete().eq('student_id', resetStudent.id)
     if (error) {
-      alert('Gagal mereset: ' + error.message)
+      toast.error('Gagal mereset: ' + error.message)
     } else {
-      alert('Berhasil! Siswa sekarang bisa mengerjakan ulang.')
+      toast.success(`Berhasil mereset ujian ${resetStudent.name}`)
       fetchDashboardData() // Refresh data
     }
+    setResetStudent(null)
   }
 
   if (loading && classroomGroups.length === 0) {
@@ -395,6 +412,27 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      <AlertDialog open={!!resetStudent} onOpenChange={(open) => !open && setResetStudent(null)}>
+        <AlertDialogContent className="rounded-3xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reset Ujian Siswa?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Apakah Anda yakin ingin RESET ujian siswa <span className="font-bold text-foreground">"{resetStudent?.name}"</span>?
+              Semua jawaban yang telah dikerjakan akan dihapus dan siswa akan bisa mengerjakan ulang dari awal.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-xl border-none bg-secondary">Batal</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmResetSubmission}
+              className="rounded-xl bg-orange-600 text-white hover:bg-orange-700"
+            >
+              Ya, Reset Ujian
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

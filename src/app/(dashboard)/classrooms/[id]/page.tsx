@@ -11,6 +11,17 @@ import {
   Upload,
 } from 'lucide-react'
 import Link from 'next/link'
+import { toast } from 'sonner'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 // Shadcn UI Components
 import { Button } from '@/components/ui/button'
@@ -52,6 +63,7 @@ export default function ClassroomDetailPage({ params }: { params: Promise<{ id: 
   const [password, setPassword] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [isImporting, setIsImporting] = useState(false)
+  const [deleteId, setDeleteId] = useState<string | null>(null)
 
   const supabase = createClient()
 
@@ -100,8 +112,9 @@ export default function ClassroomDetailPage({ params }: { params: Promise<{ id: 
       }])
 
     if (error) {
-      alert('Gagal menambah siswa: ' + error.message)
+      toast.error('Gagal menambah siswa: ' + error.message)
     } else {
+      toast.success('Siswa berhasil ditambahkan!')
       setIsModalOpen(false)
       setFullName('')
       setUsername('')
@@ -112,22 +125,28 @@ export default function ClassroomDetailPage({ params }: { params: Promise<{ id: 
   }
 
   const handleDeleteStudent = async (studentId: string) => {
-    if (!confirm('Apakah Anda yakin ingin menghapus siswa ini?')) return
+    setDeleteId(studentId)
+  }
+
+  const confirmDeleteStudent = async () => {
+    if (!deleteId) return
 
     const { error } = await supabase
       .from('profiles')
       .delete()
-      .eq('id', studentId)
+      .eq('id', deleteId)
 
     if (error) {
-      alert('Gagal menghapus: ' + error.message)
+      toast.error('Gagal menghapus: ' + error.message)
     } else {
+      toast.success('Siswa berhasil dihapus')
       fetchData()
     }
+    setDeleteId(null)
   }
 
   const handleExport = () => {
-    if (students.length === 0) return alert('Tidak ada data untuk diekspor.')
+    if (students.length === 0) return toast.error('Tidak ada data untuk diekspor.')
 
     const headers = ['Nama Lengkap', 'Username', 'Password']
     const rows = students.map(s => [s.full_name, s.username, '******'])
@@ -173,9 +192,9 @@ export default function ClassroomDetailPage({ params }: { params: Promise<{ id: 
       const { error } = await supabase.from('profiles').insert(studentData)
 
       if (error) {
-        alert('Gagal impor: ' + error.message)
+        toast.error('Gagal impor: ' + error.message)
       } else {
-        alert(`Berhasil mengimpor ${studentData.length} siswa!`)
+        toast.success(`Berhasil mengimpor ${studentData.length} siswa!`)
         fetchData()
       }
       setIsImporting(false)
@@ -351,6 +370,26 @@ export default function ClassroomDetailPage({ params }: { params: Promise<{ id: 
           </form>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+        <AlertDialogContent className="rounded-3xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus Siswa?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Apakah Anda yakin ingin menghapus akun siswa ini? Semua data pengerjaan ujian siswa ini akan ikut terhapus secara permanen.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-xl border-none bg-secondary">Batal</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteStudent}
+              className="rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Ya, Hapus Siswa
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

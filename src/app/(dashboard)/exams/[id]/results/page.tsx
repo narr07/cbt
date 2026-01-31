@@ -15,6 +15,17 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { createClient } from '@/utils/supabase/client'
+import { toast } from 'sonner'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 // Shadcn UI Components
 import { Button } from '@/components/ui/button'
@@ -41,6 +52,7 @@ export default function ExamResultsPage({ params }: { params: Promise<{ id: stri
     highest: 0,
     pending: 0
   })
+  const [resetId, setResetId] = useState<{ id: string, name: string } | null>(null)
 
   const supabase = createClient()
 
@@ -126,16 +138,21 @@ export default function ExamResultsPage({ params }: { params: Promise<{ id: stri
   )
 
   const handleResetSubmission = async (subId: string, studentName: string) => {
-    if (!confirm(`Yakin ingin RESET pengerjaan siswa "${studentName}"? Semua jawaban akan dihapus dan siswa bisa mengerjakan ulang.`)) return
+    setResetId({ id: subId, name: studentName })
+  }
 
-    const { error } = await supabase.from('submissions').delete().eq('id', subId)
+  const confirmReset = async () => {
+    if (!resetId) return
+
+    const { error } = await supabase.from('submissions').delete().eq('id', resetId.id)
     if (error) {
-      alert('Gagal mereset: ' + error.message)
+      toast.error('Gagal mereset: ' + error.message)
     } else {
       // Refresh data
-      setSubmissions(prev => prev.filter(s => s.id !== subId))
-      alert('Berhasil! Siswa sekarang bisa mengerjakan ulang.')
+      setSubmissions(prev => prev.filter(s => s.id !== resetId.id))
+      toast.success(`Berhasil mereset pengerjaan ${resetId.name}`)
     }
+    setResetId(null)
   }
 
   return (
@@ -281,6 +298,27 @@ export default function ExamResultsPage({ params }: { params: Promise<{ id: stri
           </Table>
         </CardContent>
       </Card>
+
+      <AlertDialog open={!!resetId} onOpenChange={(open) => !open && setResetId(null)}>
+        <AlertDialogContent className="rounded-3xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reset Hasil Siswa?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Apakah Anda yakin ingin RESET pengerjaan siswa <span className="font-bold text-foreground">"{resetId?.name}"</span>?
+              Hasil ujian dan seluruh jawaban akan dihapus permanen agar siswa bisa mengerjakan ulang.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-xl border-none bg-secondary">Batal</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmReset}
+              className="rounded-xl bg-orange-600 text-white hover:bg-orange-700"
+            >
+              Ya, Reset Hasil
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

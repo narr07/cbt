@@ -12,6 +12,7 @@ import {
   Trash2
 } from 'lucide-react'
 import Link from 'next/link'
+import { toast } from 'sonner'
 
 // Shadcn UI Components
 import { Button } from '@/components/ui/button'
@@ -27,12 +28,18 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 interface Exam {
   id: string
@@ -52,6 +59,7 @@ export default function ExamsPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [deleteId, setDeleteId] = useState<string | null>(null)
 
   // Form states
   const [title, setTitle] = useState('')
@@ -114,8 +122,9 @@ export default function ExamsPage() {
       }])
 
     if (error) {
-      alert('Gagal membuat ujian: ' + error.message)
+      toast.error('Gagal membuat ujian: ' + error.message)
     } else {
+      toast.success('Ujian berhasil dibuat!')
       setIsModalOpen(false)
       setTitle('')
       fetchData()
@@ -124,11 +133,20 @@ export default function ExamsPage() {
   }
 
   const handleDeleteExam = async (id: string) => {
-    if (!confirm('Hapus ujian ini? Semua soal dan data jawaban siswa juga akan terhapus.')) return
+    setDeleteId(id)
+  }
 
-    const { error } = await supabase.from('exams').delete().eq('id', id)
-    if (error) alert('Error: ' + error.message)
-    else fetchData()
+  const confirmDeleteExam = async () => {
+    if (!deleteId) return
+
+    const { error } = await supabase.from('exams').delete().eq('id', deleteId)
+    if (error) {
+      toast.error('Gagal menghapus: ' + error.message)
+    } else {
+      toast.success('Ujian berhasil dihapus')
+      fetchData()
+    }
+    setDeleteId(null)
   }
 
   const filteredExams = exams.filter(e =>
@@ -314,6 +332,26 @@ export default function ExamsPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+        <AlertDialogContent className="rounded-3xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus Ujian?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Apakah Anda yakin ingin menghapus ujian ini? Semua soal, data jawaban siswa, dan hasil ujian akan ikut terhapus secara permanen.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-xl border-none bg-secondary">Batal</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteExam}
+              className="rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Ya, Hapus Ujian
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
