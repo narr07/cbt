@@ -1,7 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { createClient } from '@/utils/supabase/client'
+import { useStudentDashboard } from '@/hooks/use-student-dashboard'
 import {
   GraduationCap,
   BookOpen,
@@ -16,77 +15,28 @@ import { useRouter } from 'next/navigation'
 
 // Shadcn UI Components
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
 
 export default function StudentDashboard() {
-  const [user, setUser] = useState<any>(null)
-  const [exams, setExams] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-  const supabase = createClient()
+  const { data, isLoading, isError } = useStudentDashboard()
+  const { user, exams } = data
   const router = useRouter()
-
-  useEffect(() => {
-    const fetchStudentData = async () => {
-      // 1. Get Session from Cookie effectively by querying profiles
-      const sessionId = document.cookie
-        .split('; ')
-        .find(row => row.startsWith('cbt_session='))
-        ?.split('=')[1]
-
-      if (!sessionId) {
-        router.push('/login')
-        return
-      }
-
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('*, classrooms(name)')
-        .eq('id', sessionId)
-        .single()
-
-      if (!profile || profile.role !== 'student') {
-        router.push('/login')
-        return
-      }
-      setUser(profile)
-
-      // 2. Fetch Exams for the student's classroom
-      const { data: examData } = await supabase
-        .from('exams')
-        .select('*, subjects(name)')
-        .eq('classroom_id', profile.classroom_id)
-        .eq('is_published', true)
-        .order('created_at', { ascending: false })
-
-      setExams(examData || [])
-
-      // 3. Update Online Status (Heartbeat)
-      const updateOnlineStatus = async () => {
-        await supabase
-          .from('profiles')
-          .update({ last_online_at: new Date().toISOString() })
-          .eq('id', sessionId)
-      }
-
-      updateOnlineStatus()
-      const interval = setInterval(updateOnlineStatus, 30000) // Every 30s
-
-      setLoading(false)
-      return () => clearInterval(interval)
-    }
-
-    fetchStudentData()
-  }, [supabase, router])
 
   const handleLogout = () => {
     document.cookie = 'cbt_session=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;'
     router.push('/login')
   }
 
-  if (loading) {
+  // Redirect if not logged in after loading
+  if (!isLoading && !user && !isError) {
+    router.push('/login')
+    return null
+  }
+
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-10 w-10 text-primary animate-spin" />
@@ -120,7 +70,7 @@ export default function StudentDashboard() {
             <Avatar className="h-9 w-9 border-2 border-background shadow-sm">
               <AvatarImage src="" alt={user?.full_name} />
               <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs">
-                {user?.full_name?.split(' ').map((n: any) => n[0]).join('').toUpperCase().slice(0, 2)}
+                {user?.full_name?.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
               </AvatarFallback>
             </Avatar>
 

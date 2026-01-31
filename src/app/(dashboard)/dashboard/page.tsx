@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import {
   Users,
@@ -44,132 +44,23 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 
-interface StatItem {
-  id: string
-  full_name: string
-  status: 'online' | 'in_progress' | 'submitted' | 'offline'
-  exam_title?: string
-  answer_count: number
-  total_questions: number
-  violations: number
-  last_online_at: string | null
-  submission_id?: string // For reset functionality
-}
-
-interface ClassroomGroup {
-  id: string
-  name: string
-  students: StatItem[]
-}
+import { useDashboardStats } from '@/hooks/use-dashboard-stats'
 
 export default function DashboardPage() {
   const supabase = createClient()
-  const [stats, setStats] = useState<any[]>([])
-  const [classroomGroups, setClassroomGroups] = useState<ClassroomGroup[]>([])
-  const [recentExams, setRecentExams] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
+  const { data, isLoading: loading, mutate } = useDashboardStats()
   const [collapsedClassrooms, setCollapsedClassrooms] = useState<Record<string, boolean>>({})
   const [resetStudent, setResetStudent] = useState<{ id: string, name: string } | null>(null)
 
-  const fetchDashboardData = useCallback(async () => {
-    try {
-      // 1. Fetch Stats
-      const [examRes, studentRes, submissionRes, classroomRes] = await Promise.all([
-        supabase.from('exams').select('id', { count: 'exact', head: true }).eq('is_published', true),
-        supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'student'),
-        supabase.from('submissions').select('id', { count: 'exact', head: true }).eq('status', 'submitted'),
-        supabase.from('classrooms').select('id', { count: 'exact', head: true })
-      ])
+  const stats = data ? [
+    { name: 'Total Siswa', value: data.counts.students.toString(), icon: Users, color: 'bg-blue-500' },
+    { name: 'Total Kelas', value: data.counts.classrooms.toString(), icon: Database, color: 'bg-purple-500' },
+    { name: 'Ujian Aktif', value: data.counts.exams.toString(), icon: ClipboardCheck, color: 'bg-emerald-500' },
+    { name: 'Total Selesai', value: data.counts.submissions.toString(), icon: TrendingUp, color: 'bg-orange-500' },
+  ] : []
 
-      setStats([
-        { name: 'Total Siswa', value: (studentRes.count || 0).toString(), icon: Users, color: 'bg-blue-500' },
-        { name: 'Total Kelas', value: (classroomRes.count || 0).toString(), icon: Database, color: 'bg-purple-500' },
-        { name: 'Ujian Aktif', value: (examRes.count || 0).toString(), icon: ClipboardCheck, color: 'bg-emerald-500' },
-        { name: 'Total Selesai', value: (submissionRes.count || 0).toString(), icon: TrendingUp, color: 'bg-orange-500' },
-      ])
-
-      // 2. Fetch Classrooms and Students
-      const { data: classrooms } = await supabase.from('classrooms').select('id, name').order('name')
-
-      if (classrooms) {
-        const groups = await Promise.all(classrooms.map(async (cls) => {
-          const { data: profiles } = await supabase
-            .from('profiles')
-            .select(`
-              id, full_name, last_online_at,
-              submissions(id, status, exam_id, exams(title), violations)
-            `)
-            .eq('classroom_id', cls.id)
-            .eq('role', 'student')
-            .order('full_name')
-
-          const students: StatItem[] = await Promise.all((profiles || []).map(async (profile: any) => {
-            const activeSub = profile.submissions?.find((s: any) =>
-               s.status === 'in_progress' || s.status === 'logged_in'
-            )
-
-            let ansCount = 0
-            let qCount = 0
-
-            if (activeSub) {
-              const [ansRes, qRes] = await Promise.all([
-                supabase.from('answers').select('id', { count: 'exact', head: true }).eq('submission_id', activeSub.id),
-                supabase.from('questions').select('id', { count: 'exact', head: true }).eq('exam_id', activeSub.exam_id)
-              ])
-              ansCount = ansRes.count || 0
-              qCount = qRes.count || 0
-            }
-
-            const isOnline = profile.last_online_at && (new Date().getTime() - new Date(profile.last_online_at).getTime() < 5 * 60000)
-
-            let status: StatItem['status'] = 'offline'
-            if (activeSub?.status === 'in_progress') status = 'in_progress'
-            else if (isOnline) status = 'online'
-
-            return {
-              id: profile.id,
-              full_name: profile.full_name,
-              status,
-              exam_title: activeSub?.exams?.title,
-              answer_count: ansCount,
-              total_questions: qCount,
-              violations: activeSub?.violations || 0,
-              last_online_at: profile.last_online_at,
-              submission_id: activeSub?.id
-            }
-          }))
-
-          return { id: cls.id, name: cls.name, students }
-        }))
-        setClassroomGroups(groups)
-      }
-
-      // 3. Fetch Recent Submissions
-      const { data: recent } = await supabase
-        .from('submissions')
-        .select(`
-          id, updated_at,
-          profiles(full_name),
-          exams(title)
-        `)
-        .eq('status', 'submitted')
-        .order('updated_at', { ascending: false })
-        .limit(6)
-
-      setRecentExams(recent || [])
-
-    } catch (err) {
-      console.error('Error fetching dashboard data:', err)
-    } finally {
-      setLoading(false)
-    }
-  }, [supabase])
-
-  useEffect(() => {
-    fetchDashboardData()
-    const interval = setInterval(fetchDashboardData, 5000)
-    return () => clearInterval(interval)
-  }, [fetchDashboardData])
+  const classroomGroups = data?.classroomGroups || []
+  const recentExams = data?.recentSubmissions || []
 
   const toggleClassroom = (id: string) => {
     setCollapsedClassrooms(prev => ({ ...prev, [id]: !prev[id] }))
@@ -182,13 +73,12 @@ export default function DashboardPage() {
   const confirmResetSubmission = async () => {
     if (!resetStudent) return
 
-    // Delete all submissions for this student
     const { error } = await supabase.from('submissions').delete().eq('student_id', resetStudent.id)
     if (error) {
       toast.error('Gagal mereset: ' + error.message)
     } else {
       toast.success(`Berhasil mereset ujian ${resetStudent.name}`)
-      fetchDashboardData() // Refresh data
+      mutate() // Refresh data via SWR
     }
     setResetStudent(null)
   }
@@ -387,7 +277,7 @@ export default function DashboardPage() {
                    Belum ada aktivitas selesai baru-baru ini.
                  </div>
               ) : (
-                recentExams.map((sub: any) => (
+                recentExams.map((sub) => (
                   <div key={sub.id} className="flex gap-4 p-4 rounded-xl bg-muted/50 border items-center hover:bg-muted transition-colors">
                     <div className="h-10 w-10 shrink-0 bg-emerald-100 rounded-xl flex items-center justify-center text-emerald-600">
                       <CheckCircle2 className="h-5 w-5" />
@@ -418,7 +308,7 @@ export default function DashboardPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Reset Ujian Siswa?</AlertDialogTitle>
             <AlertDialogDescription>
-              Apakah Anda yakin ingin RESET ujian siswa <span className="font-bold text-foreground">"{resetStudent?.name}"</span>?
+              Apakah Anda yakin ingin RESET ujian siswa <span className="font-bold text-foreground">&quot;{resetStudent?.name}&quot;</span>?
               Semua jawaban yang telah dikerjakan akan dihapus dan siswa akan bisa mengerjakan ulang dari awal.
             </AlertDialogDescription>
           </AlertDialogHeader>

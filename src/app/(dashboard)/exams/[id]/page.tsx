@@ -16,6 +16,7 @@ import {
   Eye
 } from 'lucide-react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import {
@@ -65,53 +66,27 @@ interface Question {
   options: QuestionOption[]
 }
 
+import { useExamEditor } from '@/hooks/use-exam-editor'
+
 export default function ExamEditorPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const router = useRouter()
   const supabase = createClient()
 
-  const [exam, setExam] = useState<any>(null)
+  const { exam, questions: initialQuestions, isLoading: loading, mutate } = useExamEditor(id)
   const [questions, setQuestions] = useState<Question[]>([])
-  const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [publishing, setPublishing] = useState(false)
   const [uploadingId, setUploadingId] = useState<string | null>(null)
   const [previewingQuestion, setPreviewingQuestion] = useState<Question | null>(null)
   const [showPublishDialog, setShowPublishDialog] = useState(false)
 
-  const fetchData = useCallback(async () => {
-    setLoading(true)
-    try {
-      const { data: examData } = await supabase
-        .from('exams')
-        .select('*, subjects(name)')
-        .eq('id', id)
-        .single()
-
-      setExam(examData)
-
-      const { data: qData } = await supabase
-        .from('questions')
-        .select('*, options(*)')
-        .eq('exam_id', id)
-        .order('id')
-
-      if (qData) {
-        setQuestions(qData.map((q: any) => ({
-          ...q,
-          options: q.options || []
-        })))
-      }
-    } catch (err) {
-      console.error('Error fetching exam editor data:', err)
-    } finally {
-      setLoading(false)
-    }
-  }, [id, supabase])
-
+  // Sync SWR data to local state for editing
   useEffect(() => {
-    fetchData()
-  }, [fetchData])
+    if (initialQuestions.length > 0) {
+      setQuestions(initialQuestions)
+    }
+  }, [initialQuestions])
 
   const handleAddQuestion = () => {
     const newQ: Question = {
@@ -133,7 +108,7 @@ export default function ExamEditorPage({ params }: { params: Promise<{ id: strin
     setQuestions(questions.filter(q => q.id !== qId))
   }
 
-  const handleQuestionChange = (qId: string, field: keyof Question, value: any) => {
+  const handleQuestionChange = (qId: string, field: keyof Question, value: string | number) => {
     setQuestions(questions.map(q => q.id === qId ? { ...q, [field]: value } : q))
   }
 
@@ -157,8 +132,9 @@ export default function ExamEditorPage({ params }: { params: Promise<{ id: strin
         .getPublicUrl(fileName)
 
       setQuestions(questions.map(q => q.id === qId ? { ...q, image_url: publicUrl } : q))
-    } catch (err: any) {
-      toast.error('Gagal upload gambar: ' + err.message)
+    } catch (err: unknown) {
+      const error = err as { message: string }
+      toast.error('Gagal upload gambar: ' + error.message)
     } finally {
       setUploadingId(null)
     }
@@ -168,7 +144,7 @@ export default function ExamEditorPage({ params }: { params: Promise<{ id: strin
     setQuestions(questions.map(q => q.id === qId ? { ...q, image_url: undefined } : q))
   }
 
-  const handleOptionChange = (qId: string, optId: string, field: keyof QuestionOption, value: any) => {
+  const handleOptionChange = (qId: string, optId: string, field: keyof QuestionOption, value: string | boolean) => {
     setQuestions(questions.map(q => {
       if (q.id === qId) {
         const newOptions = q.options.map(opt => {
@@ -242,9 +218,10 @@ export default function ExamEditorPage({ params }: { params: Promise<{ id: strin
       }
 
       toast.success('Berhasil menyimpan draft!')
-      fetchData()
-    } catch (err: any) {
-      toast.error('Gagal menyimpan: ' + err.message)
+      mutate() // Revalidate SWR
+    } catch (err: unknown) {
+      const error = err as { message: string }
+      toast.error('Gagal menyimpan: ' + error.message)
     } finally {
       setSaving(false)
     }
@@ -266,8 +243,9 @@ export default function ExamEditorPage({ params }: { params: Promise<{ id: strin
       if (error) throw error
       toast.success('Ujian berhasil dipublikasikan!')
       router.push('/exams')
-    } catch (err: any) {
-      toast.error('Gagal publikasi: ' + err.message)
+    } catch (err: unknown) {
+      const error = err as { message: string }
+      toast.error('Gagal publikasi: ' + error.message)
     } finally {
       setPublishing(false)
     }
@@ -287,7 +265,13 @@ export default function ExamEditorPage({ params }: { params: Promise<{ id: strin
             <div className="space-y-6">
               {previewingQuestion.image_url && (
                 <div className="flex justify-center bg-muted p-4 rounded-xl">
-                  <img src={previewingQuestion.image_url} alt="Preview" className="max-h-64 object-contain rounded-lg" />
+                  <Image
+                    src={previewingQuestion.image_url}
+                    alt="Preview"
+                    width={800}
+                    height={600}
+                    className="max-h-64 w-auto object-contain rounded-lg"
+                  />
                 </div>
               )}
               <div className="text-xl font-bold leading-relaxed bg-muted/50 p-6 rounded-xl">
@@ -399,7 +383,13 @@ export default function ExamEditorPage({ params }: { params: Promise<{ id: strin
 
               {q.image_url && (
                 <div className="relative w-fit group/img">
-                   <img src={q.image_url} alt="Question" className="max-h-64 rounded-xl border shadow-md" />
+                   <Image
+                    src={q.image_url}
+                    alt="Question"
+                    width={800}
+                    height={600}
+                    className="max-h-64 w-auto rounded-xl border shadow-md"
+                   />
                    <Button
                     variant="destructive"
                     size="icon-xs"

@@ -14,6 +14,7 @@ import {
   Loader2
 } from 'lucide-react'
 import Link from 'next/link'
+import Image from 'next/image'
 
 // Shadcn UI Components
 import { Button } from '@/components/ui/button'
@@ -44,54 +45,11 @@ interface AnswerDetail {
   }
 }
 
+import { useSubmissionDetail } from '@/hooks/use-submission-detail'
+
 export default function SubmissionDetailPage({ params }: { params: Promise<{ id: string, submissionId: string }> }) {
   const { id: examId, submissionId } = use(params)
-  const [loading, setLoading] = useState(true)
-  const [submission, setSubmission] = useState<SubmissionDetail | null>(null)
-  const [answers, setAnswers] = useState<AnswerDetail[]>([])
-
-  const supabase = createClient()
-
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true)
-
-      // 1. Fetch Submission Info
-      const { data: subData } = await supabase
-        .from('submissions')
-        .select(`
-          *,
-          profiles:student_id (full_name),
-          exams:exam_id (title)
-        `)
-        .eq('id', submissionId)
-        .single()
-
-      setSubmission(subData)
-
-      // 2. Fetch Answers with Question and Options details
-      const { data: ansData } = await supabase
-        .from('answers')
-        .select(`
-          question_id,
-          pg_option_id,
-          questions:question_id (
-            content,
-            image_url,
-            options (id, content, is_correct)
-          )
-        `)
-        .eq('submission_id', submissionId)
-
-      if (ansData) {
-        setAnswers(ansData as any)
-      }
-
-      setLoading(false)
-    }
-
-    fetchData()
-  }, [submissionId, supabase])
+  const { submission, answers, isLoading: loading } = useSubmissionDetail(submissionId)
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-[400px]">
@@ -180,9 +138,9 @@ export default function SubmissionDetailPage({ params }: { params: Promise<{ id:
             </CardContent>
           </Card>
         ) : (
-          answers.map((ans, idx) => {
-            const studentOption = ans.questions.options.find(o => o.id === ans.pg_option_id)
-            const correctOption = ans.questions.options.find(o => o.is_correct)
+          answers.map((ans: any, idx: number) => {
+            const studentOption = ans.questions.options.find((o: any) => o.id === ans.pg_option_id)
+            const correctOption = ans.questions.options.find((o: any) => o.is_correct)
             const isCorrect = ans.pg_option_id === correctOption?.id
 
             return (
@@ -209,12 +167,18 @@ export default function SubmissionDetailPage({ params }: { params: Promise<{ id:
 
                       {ans.questions.image_url && (
                         <div className="bg-muted p-4 rounded-xl inline-block">
-                          <img src={ans.questions.image_url} alt="Question" className="max-h-60 rounded-lg" />
+                          <Image
+                            src={ans.questions.image_url}
+                            alt="Question"
+                            width={600}
+                            height={400}
+                            className="max-h-60 w-auto rounded-lg"
+                          />
                         </div>
                       )}
 
                       <div className="grid grid-cols-1 gap-3">
-                        {ans.questions.options.map((opt, oIdx) => {
+                        {ans.questions.options.map((opt: any, oIdx: number) => {
                           const isStudentChoice = opt.id === ans.pg_option_id
                           const isTheCorrectOn = opt.is_correct
 

@@ -33,7 +33,26 @@ const performanceData = [
   { id: '4', name: 'Rina Wijaya', class: 'Kelas 6A', exams_taken: 15, avg_score: 95.8, status: 'Meningkat' },
 ]
 
+import { useStatistics } from '@/hooks/use-statistics'
+import { Loader2 } from 'lucide-react'
+
 export default function StatisticsPage() {
+  const { stats, isLoading: loading } = useStatistics()
+  const [searchTerm, setSearchTerm] = useState('')
+
+  const filteredPerformance = stats.performance.filter(s =>
+    s.name.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
+  if (loading) return (
+    <div className="flex items-center justify-center min-h-[400px]">
+      <div className="flex flex-col items-center gap-4">
+        <Loader2 className="h-12 w-12 text-primary animate-spin" />
+        <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest animate-pulse">Memuat Statistik...</p>
+      </div>
+    </div>
+  )
+
   return (
     <div className="space-y-8 animate-fade-in">
       <div className="flex items-center justify-between">
@@ -56,12 +75,12 @@ export default function StatisticsPage() {
             </div>
             <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Rerata Sekolah</span>
             <div className="flex items-baseline gap-2 mt-2">
-              <h2 className="text-5xl font-extrabold">82.4</h2>
+              <h2 className="text-5xl font-extrabold">{stats.schoolAvg}</h2>
               <Badge className="bg-emerald-500">
-                 <ArrowUpRight className="h-3 w-3" /> 4.2%
+                 <ArrowUpRight className="h-3 w-3" /> --
               </Badge>
             </div>
-            <p className="text-sm text-muted-foreground mt-4">Naik dari 78.2 di semester lalu</p>
+            <p className="text-sm text-muted-foreground mt-4">Berdasarkan seluruh ujian yang selesai</p>
           </CardContent>
         </Card>
 
@@ -72,21 +91,21 @@ export default function StatisticsPage() {
             </div>
             <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Partisipasi Ujian</span>
             <div className="flex items-baseline gap-2 mt-2">
-              <h2 className="text-5xl font-extrabold">96%</h2>
-              <span className="text-muted-foreground font-bold text-sm">Target: 90%</span>
+              <h2 className="text-5xl font-extrabold">{stats.participationRate}%</h2>
+              <span className="text-muted-foreground font-bold text-sm">Aktif</span>
             </div>
             <div className="w-full h-2 bg-muted rounded-full mt-6 overflow-hidden">
-               <div className="h-full bg-emerald-500 w-[96%]" />
+               <div className="h-full bg-emerald-500 transition-all duration-500" style={{ width: `${stats.participationRate}%` }} />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground">
+        <Card className="bg-linear-to-br from-primary to-primary/80 text-primary-foreground">
           <CardContent className="pt-8 pb-8 flex flex-col justify-between h-full">
             <div>
-              <h3 className="text-xl font-bold">Analisis AI Sekolah</h3>
+              <h3 className="text-xl font-bold">Analisis Sekolah</h3>
               <p className="text-primary-foreground/80 text-sm mt-2 leading-relaxed">
-                Performa Matematika kelas 5A meningkat signifikan dalam 2 minggu terakhir. Fokuskan pengayaan pada topik "Pecahan Campuran".
+                Data statistik memberikan gambaran akurasi kesiapan siswa menghadapi OSN. Pantau tren mingguan untuk hasil optimal.
               </p>
             </div>
             <Button variant="secondary" className="mt-6 bg-white/20 hover:bg-white/30 border-0">
@@ -108,6 +127,8 @@ export default function StatisticsPage() {
               <Input
                 type="text"
                 placeholder="Cari nama siswa..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-9 bg-muted/50 border-none focus-visible:ring-primary/20"
               />
             </div>
@@ -130,55 +151,59 @@ export default function StatisticsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {performanceData.map((student, i) => (
-                <TableRow key={student.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-4">
-                      <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center font-bold text-muted-foreground">
-                        {student.name[0]}
-                      </div>
-                      <div>
-                        <span className="block font-bold">{student.name}</span>
-                        <span className="text-xs text-muted-foreground italic">ID: 2026000{i+1}</span>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>{student.class}</TableCell>
-                  <TableCell>
-                    <Badge variant="secondary">
-                      {student.exams_taken} Sesi
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                     <div className="flex items-center gap-3">
-                        <span className="text-lg font-extrabold">{student.avg_score}</span>
-                        <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden">
-                           <div className="h-full bg-primary" style={{ width: `${student.avg_score}%` }} />
-                        </div>
-                     </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={student.status === 'Meningkat' ? 'default' : student.status === 'Menurun' ? 'destructive' : 'secondary'}
-                      className={student.status === 'Meningkat' ? 'bg-emerald-500' : ''}
-                    >
-                      {student.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" className="text-muted-foreground">
-                      <MoreHorizontal className="h-5 w-5" />
-                    </Button>
+              {filteredPerformance.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="h-24 text-center text-muted-foreground italic">
+                    Data tidak ditemukan.
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                filteredPerformance.map((student, i) => (
+                  <TableRow key={student.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-4">
+                        <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center font-bold text-muted-foreground">
+                          {student.name[0]}
+                        </div>
+                        <div>
+                          <span className="block font-bold">{student.name}</span>
+                          <span className="text-xs text-muted-foreground italic">ID: {student.id.slice(0, 8)}</span>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>{student.classroom}</TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">
+                        {student.exams_taken} Sesi
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                       <div className="flex items-center gap-3">
+                          <span className="text-lg font-extrabold">{student.avg_score}</span>
+                          <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden">
+                             <div className="h-full bg-primary" style={{ width: `${student.avg_score}%` }} />
+                          </div>
+                       </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={student.status === 'Meningkat' ? 'default' : student.status === 'Menurun' ? 'destructive' : 'secondary'}
+                        className={student.status === 'Meningkat' ? 'bg-emerald-500' : ''}
+                      >
+                        {student.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button variant="ghost" size="icon" className="text-muted-foreground">
+                        <MoreHorizontal className="h-5 w-5" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>
-
-        <div className="p-6 border-t text-center">
-           <Button variant="link" className="text-primary">Muat Lebih Banyak Siswa</Button>
-        </div>
       </Card>
     </div>
   )

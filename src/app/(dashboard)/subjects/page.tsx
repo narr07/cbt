@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { Plus, BookOpen, Trash2, Search, X } from 'lucide-react'
 import { toast } from 'sonner'
@@ -42,9 +42,10 @@ interface Subject {
   created_at: string
 }
 
+import { useSubjects } from '@/hooks/use-subjects'
+
 export default function SubjectsPage() {
-  const [subjects, setSubjects] = useState<Subject[]>([])
-  const [loading, setLoading] = useState(true)
+  const { subjects, isLoading: loading, mutate } = useSubjects()
   const [searchTerm, setSearchTerm] = useState('')
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [newSubjectName, setNewSubjectName] = useState('')
@@ -52,25 +53,6 @@ export default function SubjectsPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null)
 
   const supabase = createClient()
-
-  const fetchSubjects = async () => {
-    setLoading(true)
-    const { data, error } = await supabase
-      .from('subjects')
-      .select('*')
-      .order('name', { ascending: true })
-
-    if (error) {
-      console.error('Error fetching subjects:', error)
-    } else {
-      setSubjects(data || [])
-    }
-    setLoading(false)
-  }
-
-  useEffect(() => {
-    fetchSubjects()
-  }, [])
 
   const handleAddSubject = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -87,7 +69,7 @@ export default function SubjectsPage() {
       toast.success('Mata pelajaran berhasil ditambahkan!')
       setNewSubjectName('')
       setIsModalOpen(false)
-      fetchSubjects()
+      mutate() // Revalidate SWR
     }
     setIsSubmitting(false)
   }
@@ -108,7 +90,7 @@ export default function SubjectsPage() {
       toast.error('Gagal menghapus: ' + error.message)
     } else {
       toast.success('Mata pelajaran berhasil dihapus')
-      fetchSubjects()
+      mutate() // Revalidate SWR
     }
     setDeleteId(null)
   }
@@ -184,7 +166,7 @@ export default function SubjectsPage() {
             ) : filteredSubjects.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={3} className="px-6 py-12 text-center text-muted-foreground italic">
-                  Belum ada mata pelajaran. Klik "Tambah" untuk membuat satu.
+                  Belum ada mata pelajaran. Klik &quot;Tambah&quot; untuk membuat satu.
                 </TableCell>
               </TableRow>
             ) : (

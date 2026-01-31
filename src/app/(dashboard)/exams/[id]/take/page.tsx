@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, use, useRef } from 'react'
 import {
   Timer,
   ChevronLeft,
@@ -15,30 +15,37 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 
-export default function ExamTakePage() {
+import { useExamEditor } from '@/hooks/use-exam-editor'
+
+export default function ExamTakePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params)
+  const { exam, questions, isLoading } = useExamEditor(id)
+
   const [currentQuestion, setCurrentQuestion] = useState(0)
-  const [timeLeft, setTimeLeft] = useState(7200) // 2 hours
+  const [timeLeft, setTimeLeft] = useState(0)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [answers, setAnswers] = useState<Record<string, string>>({})
-
-  // Dummy questions
-  const questions = Array.from({ length: 40 }).map((_, i) => ({
-    id: `q-${i}`,
-    content: `Pertanyaan ke-${i + 1}: Apa yang dimaksud dengan fotosintesis pada tumbuhan hijau dan sebutkan faktor utamanya?`,
-    options: [
-      { id: 'a', content: 'Proses pembuatan makanan dengan bantuan cahaya matahari' },
-      { id: 'b', content: 'Proses pernapasan tumbuhan pada malam hari' },
-      { id: 'c', content: 'Proses penyerapan air dari akar ke daun' },
-      { id: 'd', content: 'Proses pengguguran daun pada musim kemarau' },
-    ]
-  }))
+  const timerStarted = useRef(false)
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0))
-    }, 1000)
-    return () => clearInterval(timer)
-  }, [])
+    if (exam && !timerStarted.current) {
+      // Use timeout to avoid synchronous setState in effect warning
+      const timeout = setTimeout(() => {
+        setTimeLeft(exam.duration * 60)
+        timerStarted.current = true
+      }, 0)
+      return () => clearTimeout(timeout)
+    }
+  }, [exam])
+
+  useEffect(() => {
+    if (timeLeft > 0) {
+      const timer = setInterval(() => {
+        setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0))
+      }, 1000)
+      return () => clearInterval(timer)
+    }
+  }, [timeLeft])
 
   const formatTime = (seconds: number) => {
     const h = Math.floor(seconds / 3600)
@@ -46,6 +53,11 @@ export default function ExamTakePage() {
     const s = seconds % 60
     return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
   }
+
+  if (isLoading) return <div className="fixed inset-0 bg-muted flex items-center justify-center z-50">Memuat Simulasi...</div>
+  if (!exam || questions.length === 0) return <div className="fixed inset-0 bg-muted flex items-center justify-center z-50">Data ujian tidak tersedia.</div>
+
+  const currentQ = questions[currentQuestion]
 
   return (
     <div className="fixed inset-0 bg-muted flex flex-col z-50 overflow-hidden">
@@ -60,8 +72,8 @@ export default function ExamTakePage() {
             <Menu className="h-6 w-6" />
           </Button>
           <div>
-            <h1 className="font-bold leading-none">Simulasi OSN Matematika I</h1>
-            <p className="text-xs uppercase font-bold text-primary tracking-wider mt-1">Sains & Matematika</p>
+            <h1 className="font-bold leading-none">{exam.title}</h1>
+            <p className="text-xs uppercase font-bold text-primary tracking-wider mt-1">{exam.subjects?.name || 'Simulasi'}</p>
           </div>
         </div>
 
@@ -89,17 +101,17 @@ export default function ExamTakePage() {
               </Button>
             </div>
 
-            <div className="text-xl font-bold leading-relaxed">
-              {questions[currentQuestion].content}
+            <div className="text-xl font-bold leading-relaxed whitespace-pre-wrap">
+              {currentQ.content}
             </div>
 
             <div className="space-y-4">
-              {questions[currentQuestion].options.map((opt, idx) => {
-                const isSelected = answers[questions[currentQuestion].id] === opt.id
+              {currentQ.options.map((opt: { id: string, content: string }, idx: number) => {
+                const isSelected = answers[currentQ.id] === opt.id
                 return (
                   <button
                     key={opt.id}
-                    onClick={() => setAnswers({...answers, [questions[currentQuestion].id]: opt.id})}
+                    onClick={() => setAnswers({...answers, [currentQ.id]: opt.id})}
                     className={`w-full p-6 rounded-2xl text-left border-2 transition-all flex items-center gap-6 group ${
                       isSelected
                         ? 'bg-primary/10 border-primary shadow-md'
@@ -135,12 +147,12 @@ export default function ExamTakePage() {
 
             <div className="flex-1 overflow-y-auto">
               <div className="grid grid-cols-5 gap-3">
-                {questions.map((_, i) => {
-                  const isAnswered = answers[questions[i].id] !== undefined
+                {questions.map((q, i) => {
+                  const isAnswered = answers[q.id] !== undefined
                   const isCurrent = currentQuestion === i
                   return (
                     <Button
-                      key={i}
+                      key={q.id}
                       variant={isCurrent ? 'default' : isAnswered ? 'secondary' : 'outline'}
                       size="icon"
                       onClick={() => setCurrentQuestion(i)}

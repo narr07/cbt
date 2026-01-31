@@ -52,11 +52,11 @@ interface Profile {
   role: string
 }
 
+import { useClassroomDetails } from '@/hooks/use-classroom-details'
+
 export default function ClassroomDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
-  const [classroom, setClassroom] = useState<any>(null)
-  const [students, setStudents] = useState<Profile[]>([])
-  const [loading, setLoading] = useState(true)
+  const { classroom, students, isLoading: loading, mutate } = useClassroomDetails(id)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [fullName, setFullName] = useState('')
   const [username, setUsername] = useState('')
@@ -66,35 +66,6 @@ export default function ClassroomDetailPage({ params }: { params: Promise<{ id: 
   const [deleteId, setDeleteId] = useState<string | null>(null)
 
   const supabase = createClient()
-
-  const fetchData = async () => {
-    setLoading(true)
-
-    // 1. Fetch Classroom Info
-    const { data: classData } = await supabase
-      .from('classrooms')
-      .select('*')
-      .eq('id', id)
-      .single()
-
-    setClassroom(classData)
-
-    // 2. Fetch Students in this class
-    // Note: Assuming profiles table has classroom_id
-    const { data: studentsData } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('classroom_id', id)
-      .eq('role', 'student')
-      .order('full_name')
-
-    setStudents(studentsData || [])
-    setLoading(false)
-  }
-
-  useEffect(() => {
-    fetchData()
-  }, [id])
 
   const handleAddStudent = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -119,7 +90,7 @@ export default function ClassroomDetailPage({ params }: { params: Promise<{ id: 
       setFullName('')
       setUsername('')
       setPassword('')
-      fetchData()
+      mutate() // Revalidate SWR
     }
     setSubmitting(false)
   }
@@ -140,7 +111,7 @@ export default function ClassroomDetailPage({ params }: { params: Promise<{ id: 
       toast.error('Gagal menghapus: ' + error.message)
     } else {
       toast.success('Siswa berhasil dihapus')
-      fetchData()
+      mutate() // Revalidate SWR
     }
     setDeleteId(null)
   }
@@ -195,7 +166,7 @@ export default function ClassroomDetailPage({ params }: { params: Promise<{ id: 
         toast.error('Gagal impor: ' + error.message)
       } else {
         toast.success(`Berhasil mengimpor ${studentData.length} siswa!`)
-        fetchData()
+        mutate() // Revalidate SWR
       }
       setIsImporting(false)
     }

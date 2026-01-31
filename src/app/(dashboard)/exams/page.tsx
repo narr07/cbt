@@ -28,6 +28,10 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
 import {
@@ -53,9 +57,15 @@ interface Exam {
   classrooms?: { name: string }
 }
 
+import { useExams } from '@/hooks/use-exams'
+import { useSubjects } from '@/hooks/use-subjects'
+import { useClassrooms } from '@/hooks/use-classrooms'
+
 export default function ExamsPage() {
-  const [exams, setExams] = useState<Exam[]>([])
-  const [loading, setLoading] = useState(true)
+  const { exams, isLoading: loading, mutate } = useExams()
+  const { subjects } = useSubjects()
+  const { classrooms } = useClassrooms()
+
   const [searchTerm, setSearchTerm] = useState('')
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -67,58 +77,20 @@ export default function ExamsPage() {
   const [classroomId, setClassroomId] = useState('')
   const [duration, setDuration] = useState(60)
 
-  // Reference data
-  const [subjects, setSubjects] = useState<any[]>([])
-  const [classrooms, setClassrooms] = useState<any[]>([])
-
   const supabase = createClient()
 
-  const fetchData = async () => {
-    setLoading(true)
-
-    // Fetch Exams with joins
-    const { data: examsData, error: examsError } = await supabase
-      .from('exams')
-      .select('*, subjects(name), classrooms(name)')
-      .order('created_at', { ascending: false })
-
-    // Fetch Subjects & Classrooms for the modal
-    const { data: subjectsData } = await supabase.from('subjects').select('*').order('name')
-    const { data: classroomsData } = await supabase.from('classrooms').select('*').order('name')
-
-    if (examsError) {
-      console.error('Error fetching exams:', examsError)
-    } else {
-      setExams((examsData as any) || [])
-    }
-
-    setSubjects(subjectsData || [])
-    setClassrooms(classroomsData || [])
-    setLoading(false)
-  }
-
-  useEffect(() => {
-    fetchData()
-  }, [])
-
-  const handleCreateExam = async (e: React.FormEvent) => {
+  const handleAddExam = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!title || !subjectId || !classroomId) return
 
     setSubmitting(true)
-
-    // Get creator ID from session cookie (simplified for this demo)
-    // In a real app, we'd get this from the auth session
-    const userId = document.cookie.split('; ').find(row => row.startsWith('cbt_session='))?.split('=')[1]
-
     const { error } = await supabase
       .from('exams')
       .insert([{
         title,
         subject_id: subjectId,
         classroom_id: classroomId,
-        duration,
-        teacher_id: userId || '3ab24054-0856-4865-81f6-f1add29258ee' // Fallback to admin id
+        duration
       }])
 
     if (error) {
@@ -127,7 +99,9 @@ export default function ExamsPage() {
       toast.success('Ujian berhasil dibuat!')
       setIsModalOpen(false)
       setTitle('')
-      fetchData()
+      setSubjectId('')
+      setClassroomId('')
+      mutate() // Revalidate SWR
     }
     setSubmitting(false)
   }
@@ -136,15 +110,19 @@ export default function ExamsPage() {
     setDeleteId(id)
   }
 
-  const confirmDeleteExam = async () => {
+  const confirmDelete = async () => {
     if (!deleteId) return
 
-    const { error } = await supabase.from('exams').delete().eq('id', deleteId)
+    const { error } = await supabase
+      .from('exams')
+      .delete()
+      .eq('id', deleteId)
+
     if (error) {
       toast.error('Gagal menghapus: ' + error.message)
     } else {
       toast.success('Ujian berhasil dihapus')
-      fetchData()
+      mutate() // Revalidate SWR
     }
     setDeleteId(null)
   }
@@ -263,7 +241,7 @@ export default function ExamsPage() {
           <DialogHeader>
             <DialogTitle>Buat Ujian Baru</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleCreateExam} className="space-y-5">
+          <form onSubmit={handleAddExam} className="space-y-5">
             <div className="space-y-2">
               <Label htmlFor="exam-title">Judul Ujian</Label>
               <Input
@@ -344,7 +322,7 @@ export default function ExamsPage() {
           <AlertDialogFooter>
             <AlertDialogCancel className="rounded-xl border-none bg-secondary">Batal</AlertDialogCancel>
             <AlertDialogAction
-              onClick={confirmDeleteExam}
+              onClick={confirmDelete}
               className="rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Ya, Hapus Ujian

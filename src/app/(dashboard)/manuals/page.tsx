@@ -109,7 +109,7 @@ export default function ManualsPage() {
         ))}
       </div>
 
-      <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0">
+      <Card className="bg-linear-to-br from-blue-500 to-blue-600 text-white border-0">
         <CardContent className="py-8">
            <div className="flex flex-col md:flex-row items-center justify-between gap-8">
               <div className="space-y-3">

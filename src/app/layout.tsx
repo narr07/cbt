@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Outfit } from "next/font/google";
 import "./globals.css";
-import QueryProvider from "@/providers/query-provider";
+import SWRProvider from "@/providers/swr-provider";
 import { Toaster } from "@/components/ui/sonner";
 
 const inter = Inter({
@@ -29,10 +29,10 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${outfit.variable} font-sans antialiased bg-slate-50 text-slate-900`}
       >
-        <QueryProvider>
+        <SWRProvider>
           {children}
           <Toaster position="top-center" richColors />
-        </QueryProvider>
+        </SWRProvider>
       </body>
     </html>
   );

@@ -56,9 +56,10 @@ interface Classroom {
   created_at: string
 }
 
+import { useClassrooms } from '@/hooks/use-classrooms'
+
 export default function ClassroomsPage() {
-  const [classrooms, setClassrooms] = useState<Classroom[]>([])
-  const [loading, setLoading] = useState(true)
+  const { classrooms, isLoading: loading, mutate } = useClassrooms()
   const [searchTerm, setSearchTerm] = useState('')
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [newClassName, setNewClassName] = useState('')
@@ -67,25 +68,6 @@ export default function ClassroomsPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null)
 
   const supabase = createClient()
-
-  const fetchClassrooms = useCallback(async () => {
-    setLoading(true)
-    const { data, error } = await supabase
-      .from('classrooms')
-      .select('*')
-      .order('name', { ascending: true })
-
-    if (error) {
-      console.error('Error fetching classrooms:', error)
-    } else {
-      setClassrooms(data || [])
-    }
-    setLoading(false)
-  }, [supabase])
-
-  useEffect(() => {
-    fetchClassrooms()
-  }, [fetchClassrooms])
 
   const handleAddClassroom = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -105,7 +87,7 @@ export default function ClassroomsPage() {
       toast.success('Kelas berhasil ditambahkan!')
       setNewClassName('')
       setIsModalOpen(false)
-      fetchClassrooms()
+      mutate() // Revalidate SWR cache
     }
     setIsSubmitting(false)
   }
@@ -126,7 +108,7 @@ export default function ClassroomsPage() {
       toast.error('Gagal menghapus: ' + error.message)
     } else {
       toast.success('Kelas berhasil dihapus')
-      fetchClassrooms()
+      mutate() // Revalidate SWR cache
     }
     setDeleteId(null)
   }
@@ -189,7 +171,7 @@ export default function ClassroomsPage() {
             ) : filteredClassrooms.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={4} className="px-6 py-12 text-center text-muted-foreground italic">
-                  Belum ada kelas. Klik "Tambah Kelas" untuk memulai.
+                  Belum ada kelas. Klik &quot;Tambah Kelas&quot; untuk memulai.
                 </TableCell>
               </TableRow>
             ) : (

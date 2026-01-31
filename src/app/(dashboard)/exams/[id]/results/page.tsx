@@ -41,92 +41,14 @@ import {
   TableRow,
 } from '@/components/ui/table'
 
+import { useExamResults } from '@/hooks/use-exam-results'
+
 export default function ExamResultsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: examId } = use(params)
-  const [loading, setLoading] = useState(true)
-  const [exam, setExam] = useState<any>(null)
-  const [submissions, setSubmissions] = useState<any[]>([])
-  const [stats, setStats] = useState({
-    total: 0,
-    average: 0,
-    highest: 0,
-    pending: 0
-  })
+  const { exam, submissions, stats, isLoading: loading, mutate } = useExamResults(examId)
   const [resetId, setResetId] = useState<{ id: string, name: string } | null>(null)
 
   const supabase = createClient()
-
-  useEffect(() => {
-
-    const fetchSubmissions = async () => {
-      // Fetch Submissions with Student Details
-      const { data: subData, error } = await supabase
-        .from('submissions')
-        .select(`
-          *,
-          profiles:student_id (full_name)
-        `)
-        .eq('exam_id', examId)
-        .order('started_at', { ascending: false })
-
-      console.log('Fetched submissions:', subData, error)
-
-      if (subData) {
-        setSubmissions(subData)
-
-        // Calculate Stats
-        const validScores = subData.filter(s => s.score !== null).map(s => s.score)
-        const avg = validScores.length > 0 ? validScores.reduce((a, b) => a + b, 0) / validScores.length : 0
-        const high = validScores.length > 0 ? Math.max(...validScores) : 0
-        const pending = subData.filter(s => s.status === 'in_progress' || !s.score).length
-
-        setStats({
-          total: subData.length,
-          average: Number(avg.toFixed(1)),
-          highest: high,
-          pending
-        })
-      }
-    }
-
-    const fetchData = async () => {
-      setLoading(true)
-
-      // 1. Fetch Exam Details
-      const { data: examData } = await supabase
-        .from('exams')
-        .select('*, subjects(name), classrooms(id, name)')
-        .eq('id', examId)
-        .single()
-
-      setExam(examData)
-
-      // 2. Fetch submissions
-      await fetchSubmissions()
-
-      setLoading(false)
-    }
-
-    fetchData()
-
-    // 3. Real-time subscription for live updates
-    const channel = supabase
-      .channel('submissions_changes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'submissions',
-        filter: `exam_id=eq.${examId}`
-      }, () => {
-        fetchSubmissions()
-      })
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [examId])
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-[400px]">
@@ -148,9 +70,8 @@ export default function ExamResultsPage({ params }: { params: Promise<{ id: stri
     if (error) {
       toast.error('Gagal mereset: ' + error.message)
     } else {
-      // Refresh data
-      setSubmissions(prev => prev.filter(s => s.id !== resetId.id))
       toast.success(`Berhasil mereset pengerjaan ${resetId.name}`)
+      mutate() // Revalidate SWR
     }
     setResetId(null)
   }
@@ -304,7 +225,7 @@ export default function ExamResultsPage({ params }: { params: Promise<{ id: stri
           <AlertDialogHeader>
             <AlertDialogTitle>Reset Hasil Siswa?</AlertDialogTitle>
             <AlertDialogDescription>
-              Apakah Anda yakin ingin RESET pengerjaan siswa <span className="font-bold text-foreground">"{resetId?.name}"</span>?
+              Apakah Anda yakin ingin RESET pengerjaan siswa <span className="font-bold text-foreground">&quot;{resetId?.name}&quot;</span>?
               Hasil ujian dan seluruh jawaban akan dihapus permanen agar siswa bisa mengerjakan ulang.
             </AlertDialogDescription>
           </AlertDialogHeader>
