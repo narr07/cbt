@@ -127,7 +127,7 @@ export function useDashboardStats() {
       .from('submissions')
       .select(`
         id, updated_at,
-        profiles(full_name),
+        profiles!student_id(full_name),
         exams(title)
       `)
       .eq('status', 'submitted')
