@@ -16,7 +16,19 @@ export function useExamResults(examId: string) {
 
     if (examErr) throw examErr
 
-    // 2. Fetch Submissions
+    // 2. Check for Essay Questions & Get Total Question Count
+    const { count: essayCount } = await supabase
+      .from('questions')
+      .select('*', { count: 'exact', head: true })
+      .eq('exam_id', examId)
+      .eq('type', 'essay')
+
+    const { count: totalQuestions } = await supabase
+      .from('questions')
+      .select('*', { count: 'exact', head: true })
+      .eq('exam_id', examId)
+
+    // 3. Fetch Submissions with Correct Answer Counts
     const { data: subData, error: subErr } = await supabase
       .from('submissions')
       .select(`
@@ -24,24 +36,40 @@ export function useExamResults(examId: string) {
         profiles:student_id (full_name)
       `)
       .eq('exam_id', examId)
-      .order('started_at', { ascending: false })
+      .order('score', { ascending: false }) // Sort by score for ranking
 
     if (subErr) throw subErr
 
-    // 3. Calculate Stats
-    const validScores = (subData || []).filter(s => s.score !== null).map(s => s.score)
+    // 4. Fetch correct answers for each submission
+    const submissionsWithCorrect = await Promise.all(
+      (subData || []).map(async (sub) => {
+        const { count: correctCount } = await supabase
+          .from('answers')
+          .select('*', { count: 'exact', head: true })
+          .eq('submission_id', sub.id)
+          .eq('is_correct', true)
+
+        return {
+          ...sub,
+          correct_answers: correctCount || 0
+        }
+      })
+    )
+
+    // 5. Calculate Stats
+    const validScores = submissionsWithCorrect.filter(s => s.score !== null).map(s => s.score)
     const avg = validScores.length > 0 ? validScores.reduce((a, b) => a + b, 0) / validScores.length : 0
     const high = validScores.length > 0 ? Math.max(...validScores) : 0
-    const pending = (subData || []).filter(s => s.status === 'in_progress' || !s.score).length
 
     return {
       exam: examData,
-      submissions: subData || [],
+      submissions: submissionsWithCorrect,
+      has_essay: (essayCount || 0) > 0,
+      total_questions: totalQuestions || 0,
       stats: {
         total: subData?.length || 0,
         average: Number(avg.toFixed(1)),
-        highest: high,
-        pending
+        highest: high
       }
     }
   }, {
@@ -51,7 +79,9 @@ export function useExamResults(examId: string) {
   return {
     exam: data?.exam,
     submissions: data?.submissions || [],
-    stats: data?.stats || { total: 0, average: 0, highest: 0, pending: 0 },
+    has_essay: data?.has_essay || false,
+    total_questions: data?.total_questions || 0,
+    stats: data?.stats || { total: 0, average: 0, highest: 0 },
     isLoading,
     isError: error,
     mutate
