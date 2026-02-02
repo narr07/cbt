@@ -19,6 +19,11 @@ export const metadata: Metadata = {
   title: "OSN SD Kec. Rajagaluh",
   description: "Computer Based Test (CBT) untuk Olimpiade Sains Nasional Sekolah Dasar (OSN SD). Platform modern, responsif, dan mudah digunakan.",
   openGraph: {
+    title: "OSN SD Kec. Rajagaluh",
+    description: "Computer Based Test (CBT) untuk Olimpiade Sains Nasional Sekolah Dasar (OSN SD). Platform modern, responsif, dan mudah digunakan.",
+    url: 'https://osnrajagaluh.vercel.app/',
+    siteName: 'OSN SD Kec. Rajagaluh',
+    type: 'website',
     images: [
       {
         url: '/opengraph-image.png',
