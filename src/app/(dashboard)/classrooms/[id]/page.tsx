@@ -193,7 +193,7 @@ export default function ClassroomDetailPage({ params }: { params: Promise<{ id: 
             </Link>
           </Button>
           <div>
-            <h1 className="text-3xl font-bold text-foreground">{classroom.name}</h1>
+            <h1 className="text-3xl font-bold text-primary-heading">{classroom.name}</h1>
             <p className="text-muted-foreground">Manajemen daftar siswa untuk kelas ini.</p>
           </div>
         </div>

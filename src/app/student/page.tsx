@@ -53,14 +53,14 @@ export default function StudentDashboard() {
             <GraduationCap className="h-6 w-6 text-primary-foreground" />
           </div>
           <div className="hidden sm:block">
-            <h1 className="text-lg font-bold text-foreground leading-tight tracking-tight">Portal Ujian</h1>
+            <h1 className="text-lg font-bold text-primary-heading leading-tight tracking-tight">Portal Ujian</h1>
             <p className="text-[10px] text-primary font-black uppercase tracking-widest">{user?.classrooms?.name}</p>
           </div>
         </div>
 
         <div className="flex items-center gap-6">
           <div className="hidden md:flex flex-col items-end">
-            <span className="text-sm font-bold text-foreground">{user?.full_name}</span>
+            <span className="text-sm font-bold text-primary-heading">{user?.full_name}</span>
             <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Siswa</span>
           </div>
 
@@ -103,7 +103,7 @@ export default function StudentDashboard() {
 
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h3 className="text-xl font-bold text-foreground flex items-center gap-2 tracking-tight">
+            <h3 className="text-xl font-bold text-primary-heading flex items-center gap-2 tracking-tight">
               <BookOpen className="h-5 w-5 text-primary" />
               Ujian Tersedia
             </h3>
@@ -144,7 +144,7 @@ export default function StudentDashboard() {
                           <span className="text-[10px] font-bold">{exam.duration} Menit</span>
                         </div>
                       </div>
-                      <CardTitle className="text-xl font-bold text-foreground group-hover:text-primary transition-colors leading-snug tracking-tight">
+                      <CardTitle className="text-xl font-bold text-primary-heading group-hover:text-primary transition-colors leading-snug tracking-tight">
                         {exam.title}
                       </CardTitle>
                       {startTime && now < startTime && (

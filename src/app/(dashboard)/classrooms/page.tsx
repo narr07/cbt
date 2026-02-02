@@ -122,7 +122,7 @@ export default function ClassroomsPage() {
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Manajemen Kelas</h1>
+          <h1 className="text-3xl font-bold text-primary-heading">Manajemen Kelas</h1>
           <p className="text-muted-foreground mt-1">Kelola grup kelas, pengajar, dan daftar siswa.</p>
         </div>
         <Button onClick={() => setIsModalOpen(true)}>

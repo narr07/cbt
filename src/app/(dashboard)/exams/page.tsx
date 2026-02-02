@@ -220,7 +220,7 @@ export default function ExamsPage() {
     <div className="space-y-8 animate-fade-in">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground tracking-tight">Manajemen Ujian (CBT)</h1>
+          <h1 className="text-3xl font-bold text-primary-heading tracking-tight">Manajemen Ujian (CBT)</h1>
           <p className="text-muted-foreground mt-1">Buat, edit, dan pantau status pelaksanaan ujian OSN.</p>
         </div>
         <Button onClick={() => setIsModalOpen(true)}>

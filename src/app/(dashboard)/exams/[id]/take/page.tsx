@@ -123,7 +123,7 @@ export default function ExamTakePage({ params }: { params: Promise<{ id: string 
                     }`}>
                       {String.fromCharCode(65 + idx)}
                     </div>
-                    <span className={`font-semibold text-lg ${isSelected ? 'text-foreground' : 'text-muted-foreground'}`}>
+                    <span className={`font-semibold text-lg ${isSelected ? 'text-primary-heading' : 'text-muted-foreground'}`}>
                       {opt.content}
                     </span>
                   </button>

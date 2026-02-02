@@ -95,7 +95,7 @@ export default function DashboardPage() {
     <div className="space-y-8 animate-fade-in pb-12">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground tracking-tight">Monitoring Real-time</h1>
+          <h1 className="text-3xl font-bold text-primary-heading tracking-tight">Monitoring Real-time</h1>
           <p className="text-muted-foreground mt-1 text-sm text-balance">Pantau aktivitas siswa per kelas secara langsung.</p>
         </div>
         <Badge variant="secondary" className="gap-2 animate-pulse w-fit text-emerald-600 bg-emerald-50 border-emerald-100">
@@ -142,7 +142,7 @@ export default function DashboardPage() {
                       <Database className="h-5 w-5" />
                     </div>
                     <div className="text-left">
-                      <h3 className="font-bold text-foreground text-lg uppercase tracking-tight">{group.name}</h3>
+                      <h3 className="font-bold text-primary-heading text-lg uppercase tracking-tight">{group.name}</h3>
                       <p className="text-[10px] font-bold text-primary uppercase tracking-widest">
                         {onlineCount} Siswa Aktif / {group.students.length} Siswa Terdaftar
                       </p>
@@ -281,7 +281,7 @@ export default function DashboardPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Reset Ujian Siswa?</AlertDialogTitle>
             <AlertDialogDescription>
-              Apakah Anda yakin ingin RESET ujian siswa <span className="font-bold text-foreground">&quot;{resetStudent?.name}&quot;</span>?
+              Apakah Anda yakin ingin RESET ujian siswa <span className="font-bold text-primary-heading">&quot;{resetStudent?.name}&quot;</span>?
               Semua jawaban yang telah dikerjakan akan dihapus dan siswa akan bisa mengerjakan ulang dari awal.
             </AlertDialogDescription>
           </AlertDialogHeader>

@@ -350,7 +350,7 @@ export default function ExamTakePage({ params }: { params: Promise<{ id: string 
           <div className="h-24 w-24 bg-amber-50 rounded-[2rem] flex items-center justify-center mb-8 border border-amber-200 shadow-xl shadow-amber-500/5 mx-auto">
             <Lock className="h-10 w-10 text-amber-600" />
           </div>
-          <h2 className="text-3xl font-black text-foreground mb-4 tracking-tighter uppercase leading-none">Akses Terkunci</h2>
+          <h2 className="text-3xl font-black text-primary-heading mb-4 tracking-tighter uppercase leading-none">Akses Terkunci</h2>
           <div className="text-muted-foreground mb-8 text-base font-medium leading-relaxed">
             {isTooEarly ? (
               <div className="p-6 bg-amber-50 border border-amber-200 rounded-3xl text-amber-700 font-bold">
@@ -393,7 +393,7 @@ export default function ExamTakePage({ params }: { params: Promise<{ id: string 
             <div className="h-20 w-20 bg-primary/10 rounded-[2rem] flex items-center justify-center mb-6 border border-primary/20 shadow-xl shadow-primary/5 mx-auto">
               <GraduationCap className="h-10 w-10 text-primary" />
             </div>
-            <DialogTitle className="text-3xl font-black text-foreground mb-4 tracking-tighter uppercase leading-none">Lembar Ujian Siap</DialogTitle>
+            <DialogTitle className="text-3xl font-black text-primary-heading mb-4 tracking-tighter uppercase leading-none">Lembar Ujian Siap</DialogTitle>
             <DialogDescription className="text-muted-foreground max-w-lg mb-8 text-base font-medium leading-relaxed">
               {!exam?.start_time ? (
                 <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl text-amber-700 font-bold mb-4">
@@ -455,7 +455,7 @@ export default function ExamTakePage({ params }: { params: Promise<{ id: string 
             <Menu className="h-5 w-5" />
           </Button>
           <div className="hidden sm:block">
-            <h1 className="font-bold text-foreground text-lg leading-tight tracking-tight">{exam?.title}</h1>
+            <h1 className="font-bold text-primary-heading text-lg leading-tight tracking-tight">{exam?.title}</h1>
             <p className="text-[9px] uppercase font-black text-primary tracking-widest">{exam?.subjects?.name || 'Mata Pelajaran'}</p>
           </div>
         </div>
@@ -463,7 +463,7 @@ export default function ExamTakePage({ params }: { params: Promise<{ id: string 
         <div className="flex items-center gap-4 md:gap-8">
           <div className={cn(
             "flex items-center gap-3 px-5 py-2.5 rounded-2xl border-2 transition-all",
-            timeLeft < 300 ? 'bg-destructive/5 border-destructive/20 text-destructive animate-pulse' : 'bg-muted/50 border-border/50 text-foreground'
+            timeLeft < 300 ? 'bg-destructive/5 border-destructive/20 text-destructive animate-pulse' : 'bg-muted/50 border-border/50 text-primary-heading'
           )}>
             <Timer className={cn("h-5 w-5", timeLeft < 300 ? 'text-destructive' : 'text-muted-foreground')} />
             <span className="font-mono font-black text-xl tabular-nums tracking-tighter">{formatTime(timeLeft)}</span>
@@ -521,7 +521,7 @@ export default function ExamTakePage({ params }: { params: Promise<{ id: string 
                 </Card>
               )}
               <Card className="rounded-[2.5rem] border-border/30 shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <CardContent className="p-8 md:p-12 text-xl md:text-2xl font-bold text-foreground leading-relaxed">
+                <CardContent className="p-8 md:p-12 text-xl md:text-2xl font-bold text-primary-heading leading-relaxed">
                   <MathRenderer content={q?.content || ''} />
                 </CardContent>
               </Card>
@@ -546,7 +546,7 @@ export default function ExamTakePage({ params }: { params: Promise<{ id: string 
                     )}>
                       {String.fromCharCode(65 + idx)}
                     </div>
-                    <div className={cn("font-bold text-lg leading-tight flex-1 whitespace-normal", isSelected ? 'text-foreground' : 'text-muted-foreground')}>
+                    <div className={cn("font-bold text-lg leading-tight flex-1 whitespace-normal", isSelected ? 'text-primary-heading' : 'text-muted-foreground')}>
                       <MathRenderer content={opt.content} />
                     </div>
                     {isSelected && (

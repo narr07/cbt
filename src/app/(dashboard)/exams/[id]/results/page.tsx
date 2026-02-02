@@ -230,7 +230,7 @@ export default function ExamResultsPage({ params }: { params: Promise<{ id: stri
                     onClick={() => setFilter(item.id as any)}
                     className={cn(
                       "px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
-                      filter === item.id ? "bg-background text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"
+                      filter === item.id ? "bg-background text-primary shadow-sm" : "text-muted-foreground hover:text-primary-heading"
                     )}
                   >
                     {item.label}
@@ -351,7 +351,7 @@ export default function ExamResultsPage({ params }: { params: Promise<{ id: stri
           <AlertDialogHeader>
             <AlertDialogTitle className="text-2xl font-black tracking-tight">Reset Hasil Siswa?</AlertDialogTitle>
             <AlertDialogDescription className="text-muted-foreground font-medium text-base">
-              Apakah Anda yakin ingin RESET pengerjaan siswa <span className="font-bold text-foreground">&quot;{resetId?.name}&quot;</span>?
+              Apakah Anda yakin ingin RESET pengerjaan siswa <span className="font-bold text-primary-heading">&quot;{resetId?.name}&quot;</span>?
               Hasil ujian dan seluruh jawaban akan dihapus permanen agar siswa bisa mengerjakan ulang.
             </AlertDialogDescription>
           </AlertDialogHeader>

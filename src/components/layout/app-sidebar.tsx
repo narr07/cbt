@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard,
@@ -41,7 +42,7 @@ const navigation = [
   { name: 'Mata Pelajaran', href: '/subjects', icon: BookOpen },
   { name: 'Manajemen Kelas', href: '/classrooms', icon: Users },
   { name: 'Ujian (CBT)', href: '/exams', icon: ClipboardCheck },
-  { name: 'Pengaturan', href: '/settings', icon: Settings },
+  // { name: 'Pengaturan', href: '/settings', icon: Settings },
 ]
 
 import { useProfile } from '@/hooks/use-profile'
@@ -93,7 +94,7 @@ export function AppSidebar() {
                         'h-11 rounded-xl transition-all duration-200',
                         isActive
                           ? 'bg-primary/10 text-primary font-bold'
-                          : 'text-muted-foreground hover:text-foreground'
+                          : 'text-muted-foreground hover:text-primary-heading'
                       )}
                     >
                       <Link href={item.href}>
@@ -112,7 +113,7 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-4 border-t border-sidebar-border/50">
+      <SidebarFooter className="border-t border-sidebar-border/50">
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>
@@ -123,7 +124,13 @@ export function AppSidebar() {
                 >
                   <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary overflow-hidden shrink-0">
                     {profile?.avatar_url ? (
-                      <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" />
+                      <Image
+                        src={profile.avatar_url}
+                        alt={profile.full_name || "Avatar"}
+                        width={32}
+                        height={32}
+                        className="h-full w-full object-cover"
+                      />
                     ) : (
                       <span className="text-[10px] font-bold">
                         {isLoading ? '...' : getInitials(profile?.full_name || 'Admin')}
