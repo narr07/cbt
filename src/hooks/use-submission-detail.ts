@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client'
 
 import useSWR from 'swr'
@@ -36,12 +37,35 @@ export function useSubmissionDetail(submissionId: string) {
 
     if (ansErr) throw ansErr
 
+    // 3. Get Total Questions for this exam
+    const { count: totalQuestions } = await supabase
+      .from('questions')
+      .select('*', { count: 'exact', head: true })
+      .eq('exam_id', subData.exam_id)
+
+    const processedAnswers = (ansData || []).map((ans: any) => ({
+      ...ans,
+      questions: Array.isArray(ans.questions) ? ans.questions[0] : ans.questions
+    }))
+
+    // 4. Compute Score
+    const correctCount = processedAnswers.filter((ans: any) => {
+      const correctOpt = ans.questions?.options?.find((o: any) => o.is_correct)
+      return ans.pg_option_id === correctOpt?.id
+    }).length
+
+    const totalQ = totalQuestions || 0
+    const autoScore = totalQ > 0 ? Math.round((correctCount / totalQ) * 100) : 0
+    const finalScore = (subData.score !== null && Number(subData.score) > 0) ? Number(subData.score) : autoScore
+
     return {
-      submission: subData,
-      answers: (ansData || []).map((ans: any) => ({
-        ...ans,
-        questions: Array.isArray(ans.questions) ? ans.questions[0] : ans.questions
-      })) as any
+      submission: {
+        ...subData,
+        score: finalScore,
+        correct_answers: correctCount,
+        total_questions: totalQ
+      },
+      answers: processedAnswers
     }
   })
 

@@ -117,6 +117,13 @@ export default function SubmissionDetailPage({ params }: { params: Promise<{ id:
 
             <div className="flex items-center gap-6 bg-muted p-6 rounded-2xl">
               <div className="text-center px-4 border-r">
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Benar</span>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-2xl font-black">{submission.correct_answers || 0}</span>
+                  <span className="text-sm font-bold text-muted-foreground">/ {submission.total_questions || 0}</span>
+                </div>
+              </div>
+              <div className="text-center px-4 border-r">
                 <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Skor Akhir</span>
                 <div className="flex items-center gap-2 mt-1">
                   <Award className="h-6 w-6 text-primary" />

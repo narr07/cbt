@@ -585,7 +585,7 @@ export default function ExamEditorPage({ params }: { params: Promise<{ id: strin
                     <textarea
                       value={q.content}
                       onChange={(e) => handleQuestionChange(q.id, 'content', e.target.value)}
-                      className="w-full bg-muted/30 border rounded-xl p-4 text-primary-heading font-medium focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all min-h-[120px] placeholder:text-muted-foreground"
+                      className="w-full bg-muted/30 border rounded-xl p-4 text-foreground font-medium focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all min-h-[120px] placeholder:text-muted-foreground"
                       placeholder="Ketikkan teks soal di sini..."
                     />
                   </div>

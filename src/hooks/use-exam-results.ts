@@ -86,7 +86,11 @@ export function useExamResults(examId: string) {
     // 5. Calculate Stats
     const validScores = submissionsComputed.map(s => Number(s.score))
     const avg = validScores.length > 0 ? validScores.reduce((a, b) => a + b, 0) / validScores.length : 0
-    const high = validScores.length > 0 ? Math.max(...validScores) : 0
+
+    // Find top scorer
+    const topSubmission = submissionsComputed.length > 0
+      ? [...submissionsComputed].sort((a, b) => Number(b.score) - Number(a.score))[0]
+      : null
 
     return {
       exam: examData,
@@ -96,7 +100,8 @@ export function useExamResults(examId: string) {
       stats: {
         total: subData?.length || 0,
         average: Number(avg.toFixed(1)),
-        highest: high
+        highest: topSubmission ? Number(topSubmission.score) : 0,
+        highestName: topSubmission?.profiles?.full_name || '-'
       }
     }
   }, {
@@ -108,7 +113,7 @@ export function useExamResults(examId: string) {
     submissions: data?.submissions || [],
     has_essay: data?.has_essay || false,
     total_questions: data?.total_questions || 0,
-    stats: data?.stats || { total: 0, average: 0, highest: 0 },
+    stats: data?.stats || { total: 0, average: 0, highest: 0, highestName: '-' },
     isLoading,
     isError: error,
     mutate

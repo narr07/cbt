@@ -200,7 +200,9 @@ export default function ExamResultsPage({ params }: { params: Promise<{ id: stri
              <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Skor Tertinggi</span>
              <div className="flex items-center gap-3 mt-1">
                 <span className="text-4xl font-black tabular-nums text-primary">{stats.highest}</span>
-                <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Top Peak</span>
+                <span className="text-[10px] font-black text-primary uppercase tracking-widest truncate max-w-[150px]">
+                  {stats.highestName}
+                </span>
              </div>
           </CardContent>
         </Card>
