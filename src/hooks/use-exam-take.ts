@@ -20,6 +20,12 @@ export interface Question {
   options: QuestionOption[]
 }
 
+export interface StudentProfile {
+  id: string
+  full_name: string
+  role: string
+}
+
 export function useExamTake(examId: string) {
   const { data, error, mutate, isLoading } = useSWR(examId ? `exam-take-${examId}` : null, async () => {
     // 1. Get Session
@@ -38,6 +44,15 @@ export function useExamTake(examId: string) {
       .single()
 
     if (examErr || !exam) throw examErr || new Error('Exam not found')
+
+    // 2.5 Fetch Profile
+    const { data: profile, error: profErr } = await supabase
+      .from('profiles')
+      .select('id, full_name, role')
+      .eq('id', sessionId)
+      .single()
+
+    if (profErr || !profile) throw profErr || new Error('Profile not found')
 
     // 3. Fetch Questions
     const { data: questions, error: qErr } = await supabase
@@ -61,7 +76,7 @@ export function useExamTake(examId: string) {
 
     if (existingSub) {
       if (existingSub.status === 'submitted') {
-        return { exam, questions: questions as Question[], submission, answers, alreadySubmitted: true }
+        return { exam, questions: questions as Question[], submission, answers, alreadySubmitted: true, user: profile as StudentProfile }
       }
 
       // Load previous answers
@@ -96,7 +111,8 @@ export function useExamTake(examId: string) {
       questions: questions as Question[],
       submission,
       answers,
-      alreadySubmitted: false
+      alreadySubmitted: false,
+      user: profile as StudentProfile
     }
   }, {
     revalidateOnFocus: false, // Don't revalidate when moving tabs (security)
@@ -104,7 +120,7 @@ export function useExamTake(examId: string) {
   })
 
   return {
-    data: data || { exam: null, questions: [], submission: null, answers: {}, alreadySubmitted: false },
+    data: data || { exam: null, questions: [], submission: null, answers: {}, alreadySubmitted: false, user: null },
     isLoading,
     isError: error,
     mutate

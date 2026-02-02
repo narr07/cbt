@@ -54,7 +54,7 @@ export default function ExamTakePage({ params }: { params: Promise<{ id: string 
 
   // SWR Hook
   const { data: swrData, isLoading } = useExamTake(examId)
-  const { exam, questions, submission, answers: initialAnswers, alreadySubmitted } = swrData
+  const { exam, questions, submission, answers: initialAnswers, alreadySubmitted, user } = swrData
 
   const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0)
   const [timeLeft, setTimeLeft] = useState(0)
@@ -446,19 +446,14 @@ export default function ExamTakePage({ params }: { params: Promise<{ id: string 
 
       <header className="h-20 bg-background border-b px-6 md:px-8 flex items-center justify-between shadow-sm z-30">
         <div className="flex items-center gap-4">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setSidebarOpen(true)}
-            className="h-11 w-11 rounded-xl flex items-center justify-center text-muted-foreground border-border/50"
-          >
-            <Menu className="h-5 w-5" />
-          </Button>
           <div className="hidden sm:block">
             <h1 className="font-bold text-primary-heading text-lg leading-tight tracking-tight">{exam?.title}</h1>
             <p className="text-[9px] uppercase font-black text-primary tracking-widest">{exam?.subjects?.name || 'Mata Pelajaran'}</p>
           </div>
         </div>
+          <div className="hidden sm:block">
+            <h1 className="font-bold text-primary-heading text-lg leading-tight tracking-tight">Semangat {user?.full_name}</h1>
+          </div>
 
         <div className="flex items-center gap-4 md:gap-8">
           <div className={cn(
@@ -466,7 +461,7 @@ export default function ExamTakePage({ params }: { params: Promise<{ id: string 
             timeLeft < 300 ? 'bg-destructive/5 border-destructive/20 text-destructive animate-pulse' : 'bg-muted/50 border-border/50 text-primary-heading'
           )}>
             <Timer className={cn("h-5 w-5", timeLeft < 300 ? 'text-destructive' : 'text-muted-foreground')} />
-            <span className="font-mono font-black text-xl tabular-nums tracking-tighter">{formatTime(timeLeft)}</span>
+            <span className=" font-black text-xl tabular-nums tracking-tighter">{formatTime(timeLeft)}</span>
           </div>
           <Separator orientation="vertical" className="h-10 hidden sm:block" />
           <Button
@@ -487,17 +482,17 @@ export default function ExamTakePage({ params }: { params: Promise<{ id: string 
       </header>
 
       <div className="flex flex-1 relative overflow-hidden">
-        <main className="flex-1 overflow-y-auto p-6 md:p-12 lg:p-20 pb-40">
+        <main className="flex-1 overflow-y-auto p-6  pb-20">
           <div className="max-w-4xl mx-auto space-y-12">
             <div className="flex items-center justify-between py-2 border-b border-border/50">
-              <span className="text-[10px] font-black text-muted-foreground/50 uppercase tracking-[0.4em]">Soal No. {currentQuestionIdx + 1}</span>
+              <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.4em]">Soal No. {currentQuestionIdx + 1}</span>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => q && toggleFlag(q.id)}
                 className={cn(
                   "text-[10px] font-black uppercase tracking-widest rounded-xl transition-all h-9 px-4",
-                  q && flaggedQuestions.has(q.id) ? 'bg-amber-100 text-amber-700 border-amber-300' : 'bg-amber-50/50 text-amber-600 border-amber-100'
+                  q && flaggedQuestions.has(q.id) ? 'bg-amber-100 text-amber-700 border-amber-300' : 'bg-amber-200/50 text-amber-600 border-amber-100'
                 )}
               >
                 <Flag className={cn("h-3.5 w-3.5 mr-2", q && flaggedQuestions.has(q.id) ? "fill-current" : "")} />
@@ -508,7 +503,7 @@ export default function ExamTakePage({ params }: { params: Promise<{ id: string 
             <div className="space-y-8">
               {q?.image_url && (
                 <Card className="rounded-[2.5rem] overflow-hidden border-none shadow-sm">
-                   <CardContent className="p-4 flex justify-center bg-white">
+                   <CardContent className="p-2 flex justify-center bg-white">
                       <Image
                         src={q.image_url}
                         alt="Question Illustration"
@@ -520,8 +515,8 @@ export default function ExamTakePage({ params }: { params: Promise<{ id: string 
                    </CardContent>
                 </Card>
               )}
-              <Card className="rounded-[2.5rem] border-border/30 shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <CardContent className="p-8 md:p-12 text-xl md:text-2xl font-bold text-primary-heading leading-relaxed">
+              <Card className="rounded-lg border-border/60 shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <CardContent className="px-8 tracking-wide   text-lg font-medium text-black leading-relaxed">
                   <MathRenderer content={q?.content || ''} />
                 </CardContent>
               </Card>
@@ -536,17 +531,17 @@ export default function ExamTakePage({ params }: { params: Promise<{ id: string 
                     variant="ghost"
                     onClick={() => handleAnswer(q.id, opt.id)}
                     className={cn(
-                      "p-8 h-auto rounded-[2rem] text-left border-2 transition-all flex items-center gap-5 group relative overflow-hidden justify-start",
-                      isSelected ? 'bg-primary/5 border-primary' : 'bg-background border-border/40 hover:border-primary/30'
+                      "p-4 h-auto rounded-lg text-left border-2 transition-all flex items-center gap-5 group relative overflow-hidden justify-start",
+                      isSelected ? 'bg-primary/5 border-primary' : 'bg-background border-border/60 hover:border-primary/30'
                     )}
                   >
                     <div className={cn(
-                      "h-12 w-12 rounded-2xl flex items-center justify-center font-black text-xl ring-1 transition-all shrink-0",
-                      isSelected ? 'bg-primary text-primary-foreground ring-primary' : 'bg-muted text-muted-foreground ring-border/50 group-hover:bg-primary/10'
+                      "h-10 w-10 rounded-lg flex items-center justify-center font-black text-lg ring-1 transition-all shrink-0",
+                      isSelected ? 'bg-primary text-primary-foreground ring-primary' : 'bg-black/10 text-black ring-border/50 group-hover:bg-primary/30'
                     )}>
                       {String.fromCharCode(65 + idx)}
                     </div>
-                    <div className={cn("font-bold text-lg leading-tight flex-1 whitespace-normal", isSelected ? 'text-primary-heading' : 'text-muted-foreground')}>
+                    <div className={cn("font-bold text-lg leading-tight flex-1 whitespace-normal", isSelected ? 'text-primary-heading' : 'text-black')}>
                       <MathRenderer content={opt.content} />
                     </div>
                     {isSelected && (
@@ -570,12 +565,12 @@ export default function ExamTakePage({ params }: { params: Promise<{ id: string 
           sidebarOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0 lg:static'
         )}>
           <div className="flex items-center justify-between mb-10">
-            <h2 className="font-black text-xs uppercase tracking-[0.2em] text-muted-foreground/60">Navigasi Soal</h2>
+            <h2 className="font-black text-xs uppercase tracking-[0.2em] text-muted-foreground/60">Daftar Soal</h2>
             <Button variant="ghost" size="icon" className="lg:hidden rounded-xl" onClick={() => setSidebarOpen(false)}>
               <X className="h-5 w-5 text-muted-foreground"/>
             </Button>
           </div>
-          <div className="flex-1 overflow-y-auto pr-2">
+          <div className="flex-1 overflow-y-auto p-2">
             <div className="grid grid-cols-5 gap-2.5">
               {questions.map((item, i) => {
                 const isAnswered = answers[item.id] !== undefined
@@ -590,7 +585,7 @@ export default function ExamTakePage({ params }: { params: Promise<{ id: string 
                       "aspect-square p-0 h-auto rounded-xl flex items-center justify-center font-black text-xs border-2 relative",
                       isCurrent ? 'bg-primary text-primary-foreground border-primary scale-105 z-10' :
                       isFlagged ? 'bg-amber-100 text-amber-700 border-amber-300' :
-                      isAnswered ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-muted/30 text-muted-foreground/50 border-border/30'
+                      isAnswered ? 'bg-emerald-500 text-emerald-50 border-emerald-100' : 'bg-muted/30 text-muted-foreground/50 border-border/30'
                     )}
                   >
                     {i + 1}
@@ -610,7 +605,7 @@ export default function ExamTakePage({ params }: { params: Promise<{ id: string 
         </aside>
       </div>
 
-      <footer className="h-24 bg-background/90 backdrop-blur-md border-t border-border/50 px-6 md:px-12 flex items-center justify-between z-30">
+      <footer className="h-24 bg-background/90 backdrop-blur-md border-t border-border/50 px-6 md:px-12 flex items-center justify-center z-100">
         <Button
           variant="ghost"
           disabled={currentQuestionIdx === 0}

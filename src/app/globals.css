@@ -170,4 +170,31 @@ h1, h2, h3, h4, h5, h6 {
   body {
     @apply bg-background text-primary-heading;
   }
+
+  /* KaTeX Normalization */
+  .katex {
+    font-size: 1.25em !important; /* Slightly larger to match Inter's optical size */
+    color: inherit !important;
+    line-height: normal; /* Changed from 1 for better vertical centering */
+    text-indent: 0;
+    unicode-bidi: isolate;
+    vertical-align: middle; /* Better baseline alignment for inline math */
+  }
+
+  /* Weight matching for CBT UI */
+  .font-medium .katex {
+    font-weight: 500 !important;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .font-semibold .katex, .font-bold .katex {
+    font-weight: 700 !important;
+  }
+
+  /* Vertical alignment for display math */
+  .katex-display {
+    margin: 1.5em 0 !important;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
 }

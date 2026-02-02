@@ -666,7 +666,7 @@ export default function ExamEditorPage({ params }: { params: Promise<{ id: strin
                             <Button
                               variant="ghost"
                               size="icon-sm"
-                              onClick={() => handleOptionChange(q.id, opt.id, 'content', '')}
+                              onClick={() => handleRemoveOption(q.id, opt.id)}
                               className="text-muted-foreground hover:text-destructive"
                             >
                               <X className="h-4 w-4" />

@@ -47,7 +47,7 @@ export default function StudentDashboard() {
   return (
     <div className="min-h-screen bg-muted/30 flex flex-col">
       {/* Student Header */}
-      <header className="h-20 bg-background border-b px-6 md:px-12 flex items-center justify-between sticky top-0 z-10 shadow-sm">
+      <header className="h-20 bg-background border-b px-6 md:px-12 flex items-center justify-between sticky top-0 z-100 shadow-sm">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
             <GraduationCap className="h-6 w-6 text-primary-foreground" />
@@ -89,9 +89,9 @@ export default function StudentDashboard() {
       <main className="flex-1 max-w-6xl w-full mx-auto p-6 md:p-12 space-y-10">
         {/* Hero Card */}
         <Card className="bg-primary border-none shadow-2xl shadow-primary/20 overflow-hidden rounded-[2.5rem]">
-          <CardContent className="p-8 md:p-12 text-primary-foreground relative">
+          <CardContent className="py-4 px-8 text-primary-foreground relative">
             <div className="relative z-10">
-              <h2 className="text-3xl md:text-4xl font-bold mb-4 tracking-tight">Halo, {user?.full_name.split(' ')[0]}! 👋</h2>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4 tracking-tight">Halo, <span className="text-[#f6ff00]">{user?.full_name}</span> ! 👋</h2>
               <p className="text-primary-foreground/80 max-w-md leading-relaxed font-medium">
                 Selamat datang di sistem CBT OSN SD. Silakan pilih ujian yang tersedia di bawah ini untuk memulai.
               </p>
@@ -133,8 +133,8 @@ export default function StudentDashboard() {
                 const isDisabled = isTooEarly || isEnded
 
                 return (
-                  <Card key={exam.id} className="rounded-[2rem] border-border/50 shadow-sm hover:shadow-xl hover:shadow-primary/5 transition-all group flex flex-col justify-between overflow-hidden">
-                    <CardHeader className="p-8 pb-3">
+                  <Card key={exam.id} className="rounded-[2rem] border-primary/50 shadow-sm hover:shadow-xl hover:shadow-primary/5 transition-all group flex flex-col justify-between overflow-hidden">
+                    <CardHeader className="px-6 py-4 pb-1">
                       <div className="flex items-center justify-between mb-6">
                         <Badge className="bg-primary/10 text-primary border-none text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-primary/20 px-3 py-1 transition-colors">
                           {exam.subjects?.name}
