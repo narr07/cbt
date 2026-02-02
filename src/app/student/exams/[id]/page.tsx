@@ -509,7 +509,7 @@ export default function ExamTakePage({ params }: { params: Promise<{ id: string 
                         alt="Question Illustration"
                         width={800}
                         height={600}
-                        className="max-h-80 md:max-h-96 w-auto object-contain rounded-2xl"
+                        className="max-h-36  w-auto object-contain rounded-2xl"
                         priority
                       />
                    </CardContent>

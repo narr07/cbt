@@ -54,16 +54,7 @@ export function useExamTake(examId: string) {
 
     if (profErr || !profile) throw profErr || new Error('Profile not found')
 
-    // 3. Fetch Questions
-    const { data: questions, error: qErr } = await supabase
-      .from('questions')
-      .select('*, options(id, content)')
-      .eq('exam_id', examId)
-      .order('id')
-
-    if (qErr) throw qErr
-
-    // 4. Create or Resume Submission
+    // 3. Create or Resume Submission FIRST (before fetching questions)
     const { data: existingSub } = await supabase
       .from('submissions')
       .select('*')
@@ -76,19 +67,21 @@ export function useExamTake(examId: string) {
 
     if (existingSub) {
       if (existingSub.status === 'submitted') {
-        return { exam, questions: questions as Question[], submission, answers, alreadySubmitted: true, user: profile as StudentProfile }
-      }
+        // If already submitted, still fetch questions for review
+        // but mark as already submitted
+      } else {
+        // Load previous answers for in-progress submission
+        const { data: prevAns } = await supabase
+          .from('answers')
+          .select('*')
+          .eq('submission_id', existingSub.id)
 
-      // Load previous answers
-      const { data: prevAns } = await supabase
-        .from('answers')
-        .select('*')
-        .eq('submission_id', existingSub.id)
-
-      if (prevAns) {
-        prevAns.forEach(a => answers[a.question_id] = a.pg_option_id)
+        if (prevAns) {
+          prevAns.forEach(a => answers[a.question_id] = a.pg_option_id)
+        }
       }
     } else {
+      // Create new submission
       const { data: newSub, error: insertError } = await supabase
         .from('submissions')
         .insert([{
@@ -106,12 +99,35 @@ export function useExamTake(examId: string) {
       submission = newSub
     }
 
+    // 4. NOW fetch questions via API (submission already exists)
+    let questions: Question[] = []
+
+    try {
+      const apiResponse = await fetch(`/api/exams/${examId}/questions`, {
+        credentials: 'include',
+        headers: {
+          'Cookie': document.cookie
+        }
+      })
+
+      if (!apiResponse.ok) {
+        const errorData = await apiResponse.json()
+        throw new Error(errorData.error || 'Failed to fetch questions')
+      }
+
+      const apiData = await apiResponse.json()
+      questions = apiData.questions || []
+    } catch (apiError) {
+      console.error('API fetch error:', apiError)
+      throw apiError
+    }
+
     return {
       exam,
-      questions: questions as Question[],
+      questions,
       submission,
       answers,
-      alreadySubmitted: false,
+      alreadySubmitted: existingSub?.status === 'submitted',
       user: profile as StudentProfile
     }
   }, {
