@@ -20,6 +20,8 @@ export interface StudentExam {
   id: string
   title: string
   duration: number
+  start_time: string | null
+  end_time: string | null
   subjects: {
     name: string
   } | null

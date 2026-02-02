@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client'
 
 import { useState, useEffect, useCallback, use } from 'react'
@@ -13,12 +14,16 @@ import {
   CheckCircle2,
   Loader2,
   X,
-  Eye
+  Eye,
+  Download,
+  Upload
 } from 'lucide-react'
+import * as XLSX from 'xlsx'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
+import { MathRenderer } from '@/components/ui/math-renderer'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -227,6 +232,101 @@ export default function ExamEditorPage({ params }: { params: Promise<{ id: strin
     }
   }
 
+  const handleDownloadTemplate = () => {
+    const templateData = [
+      {
+        'No': 1,
+        'Tipe': 'PG',
+        'Soal': 'Berapakah hasil dari $\\sqrt{144} + 2^3$?',
+        'Poin': 5,
+        'Opsi A': '20',
+        'Opsi B': '18',
+        'Opsi C': '22',
+        'Opsi D': '25',
+        'Opsi E': '',
+        'Jawaban Benar': 'A'
+      },
+      {
+        'No': 2,
+        'Tipe': 'Essay',
+        'Soal': 'Tuliskan rumus Pythagoras $$a^2 + b^2 = c^2$$ dan jelaskan!',
+        'Poin': 10,
+        'Opsi A': '',
+        'Opsi B': '',
+        'Opsi C': '',
+        'Opsi D': '',
+        'Opsi E': '',
+        'Jawaban Benar': ''
+      }
+    ]
+
+    const worksheet = XLSX.utils.json_to_sheet(templateData)
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Template Soal')
+
+    // Generate buffer and trigger download
+    XLSX.writeFile(workbook, `Template_Soal_${exam?.title || 'Ujian'}.xlsx`)
+  }
+
+  const handleImportExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = (evt) => {
+      try {
+        const bstr = evt.target?.result
+        const wb = XLSX.read(bstr, { type: 'binary' })
+        const wsname = wb.SheetNames[0]
+        const ws = wb.Sheets[wsname]
+        const data = XLSX.utils.sheet_to_json(ws) as any[]
+
+        const importedQuestions: Question[] = data.map((row, index) => {
+          const type = (row['Tipe'] || 'PG').toLowerCase() === 'essay' ? 'essay' : 'pg'
+          const questionContent = row['Soal'] || ''
+          const points = parseInt(row['Poin']) || 5
+          const correctLetter = (row['Jawaban Benar'] || 'A').toUpperCase()
+
+          const options: QuestionOption[] = []
+          if (type === 'pg') {
+            const possibleOptions = ['A', 'B', 'C', 'D', 'E']
+            possibleOptions.forEach((letter) => {
+              const content = row[`Opsi ${letter}`]
+              if (content !== undefined && content !== null && content !== '') {
+                options.push({
+                  id: `imp-opt-${letter}-${Date.now()}-${index}`,
+                  content: content.toString(),
+                  is_correct: letter === correctLetter
+                })
+              }
+            })
+          }
+
+          return {
+            id: `imp-${Date.now()}-${index}`,
+            content: questionContent,
+            points,
+            type: type as 'pg' | 'essay',
+            options
+          }
+        })
+
+        if (importedQuestions.length > 0) {
+          setQuestions([...questions, ...importedQuestions])
+          toast.success(`Berhasil mengimpor ${importedQuestions.length} soal!`)
+        } else {
+          toast.error('Tidak ada soal yang ditemukan dalam file.')
+        }
+      } catch (err) {
+        console.error('Import Error:', err)
+        toast.error('Gagal mengimpor file Excel. Pastikan format benar.')
+      }
+    }
+    reader.readAsBinaryString(file)
+    // Reset input
+    e.target.value = ''
+  }
+
   const handlePublish = async () => {
     setShowPublishDialog(true)
   }
@@ -275,7 +375,11 @@ export default function ExamEditorPage({ params }: { params: Promise<{ id: strin
                 </div>
               )}
               <div className="text-xl font-bold leading-relaxed bg-muted/50 p-6 rounded-xl">
-                {previewingQuestion.content || <span className="text-muted-foreground italic">Belum ada teks pertanyaan...</span>}
+                {previewingQuestion.content ? (
+                  <MathRenderer content={previewingQuestion.content} />
+                ) : (
+                  <span className="text-muted-foreground italic">Belum ada teks pertanyaan...</span>
+                )}
               </div>
 
               {previewingQuestion.type === 'pg' && (
@@ -285,7 +389,13 @@ export default function ExamEditorPage({ params }: { params: Promise<{ id: strin
                       <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center font-bold text-muted-foreground text-sm">
                         {String.fromCharCode(65 + idx)}
                       </div>
-                      <span className="font-medium">{opt.content || <span className="text-muted-foreground italic">Opsi kosong...</span>}</span>
+                      <div className="font-medium flex-1">
+                        {opt.content ? (
+                          <MathRenderer content={opt.content} />
+                        ) : (
+                          <span className="text-muted-foreground italic">Opsi kosong...</span>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -326,6 +436,41 @@ export default function ExamEditorPage({ params }: { params: Promise<{ id: strin
             {publishing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Rocket className="h-4 w-4" />}
             {exam?.is_published ? 'Sudah Terbit' : 'Publikasi'}
           </Button>
+        </div>
+      </div>
+
+      {/* Import/Template Actions */}
+      <div className="max-w-4xl mx-auto flex flex-col sm:flex-row gap-4 mb-8">
+        <Button variant="outline" className="flex-1 h-16 border-dashed hover:border-primary hover:bg-primary/5 group" onClick={handleDownloadTemplate}>
+          <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center group-hover:bg-primary/20 transition-colors mr-3">
+            <Download className="h-5 w-5 text-primary" />
+          </div>
+          <div className="text-left">
+            <div className="text-sm font-bold">Download Template</div>
+            <div className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">File Excel (.xlsx)</div>
+          </div>
+        </Button>
+
+        <div className="flex-1 relative">
+          <input
+            type="file"
+            id="import-excel"
+            className="hidden"
+            accept=".xlsx, .xls"
+            onChange={handleImportExcel}
+          />
+          <Label
+            htmlFor="import-excel"
+            className="flex items-center w-full h-16 px-4 py-2 border rounded-xl border-dashed cursor-pointer hover:border-primary hover:bg-primary/5 transition-all group"
+          >
+            <div className="h-10 w-10 shrink-0 rounded-lg bg-muted flex items-center justify-center group-hover:bg-primary/20 transition-colors mr-3">
+              <Upload className="h-5 w-5 text-primary" />
+            </div>
+            <div className="text-left">
+              <div className="text-sm font-bold">Import dari Excel</div>
+              <div className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Unggah file soal anda</div>
+            </div>
+          </Label>
         </div>
       </div>
 

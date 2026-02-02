@@ -92,13 +92,13 @@ export default function LoginPage() {
           <div className="mx-auto w-16 h-16 bg-primary rounded-2xl flex items-center justify-center shadow-lg mb-4">
             <GraduationCap className="w-10 h-10 text-primary-foreground" />
           </div>
-          <CardTitle className="text-2xl font-bold">CBT OSN SD</CardTitle>
+          <CardTitle className="text-2xl font-bold">OSN SD KEC. RAJAGALUH</CardTitle>
           <CardDescription className="text-muted-foreground">
             Masuk ke platform ujian online
           </CardDescription>
         </CardHeader>
 
-        <CardContent>
+        <CardContent suppressHydrationWarning>
           <form onSubmit={handleLogin} className="space-y-5">
             <div className="space-y-2">
               <Label htmlFor="username">Username</Label>

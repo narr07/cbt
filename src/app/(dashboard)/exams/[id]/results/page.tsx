@@ -113,13 +113,7 @@ export default function ExamResultsPage({ params }: { params: Promise<{ id: stri
     const excelData = filteredSubmissions.map((sub, idx) => ({
       'Peringkat': idx + 1,
       'Nama Siswa': sub.profiles?.full_name || 'Siswa',
-      'Waktu Kumpul': sub.created_at ? new Date(sub.created_at).toLocaleString('id-ID', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      }) : '-',
+      'Durasi Pengerjaan': sub.work_duration || '-',
       'Jawaban Benar': `${sub.correct_answers || 0}/${total_questions}`,
       'Status': sub.status === 'submitted' ? 'Graded' : 'Active',
       'Pelanggaran': sub.violations || 0,
@@ -133,7 +127,7 @@ export default function ExamResultsPage({ params }: { params: Promise<{ id: stri
     worksheet['!cols'] = [
       { wch: 10 }, // Peringkat
       { wch: 25 }, // Nama Siswa
-      { wch: 20 }, // Waktu Kumpul
+      { wch: 20 }, // Durasi Pengerjaan
       { wch: 15 }, // Jawaban Benar
       { wch: 12 }, // Status
       { wch: 12 }, // Pelanggaran
@@ -248,7 +242,7 @@ export default function ExamResultsPage({ params }: { params: Promise<{ id: stri
                 <TableRow>
                   <TableHead className="w-16 text-center font-black text-[10px] uppercase tracking-widest">Rank</TableHead>
                   <TableHead className="font-black text-[10px] uppercase tracking-widest">Siswa</TableHead>
-                  <TableHead className="font-black text-[10px] uppercase tracking-widest">Waktu Kumpul</TableHead>
+                  <TableHead className="font-black text-[10px] uppercase tracking-widest">Durasi Pengerjaan</TableHead>
                   <TableHead className="font-black text-[10px] uppercase tracking-widest">Benar</TableHead>
                   <TableHead className="font-black text-[10px] uppercase tracking-widest">Status</TableHead>
                   <TableHead className="font-black text-[10px] uppercase tracking-widest">Skor Akhir</TableHead>
@@ -261,14 +255,9 @@ export default function ExamResultsPage({ params }: { params: Promise<{ id: stri
                     <TableCell className="text-center font-black text-muted-foreground/30">{idx + 1}</TableCell>
                     <TableCell className="font-bold py-5">{sub.profiles?.full_name || 'Siswa'}</TableCell>
                     <TableCell className="text-muted-foreground">
-                      <div className="flex items-center gap-2 font-medium text-xs">
+                      <div className="flex items-center gap-2 font-black text-xs uppercase tracking-widest">
                         <Clock className="h-3.5 w-3.5" />
-                        {sub.created_at ? new Date(sub.created_at).toLocaleString('id-ID', {
-                          day: '2-digit',
-                          month: 'short',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        }) : '-'}
+                        {sub.work_duration || '-'}
                       </div>
                     </TableCell>
                     <TableCell>

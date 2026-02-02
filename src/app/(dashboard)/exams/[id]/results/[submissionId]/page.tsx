@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client'
 
 import { useState, useEffect, use } from 'react'
@@ -90,7 +91,19 @@ export default function SubmissionDetailPage({ params }: { params: Promise<{ id:
                 <div className="flex items-center gap-4 mt-2">
                   <div className="flex items-center gap-1.5 text-muted-foreground font-bold text-xs">
                     <Clock className="h-3.5 w-3.5" />
-                    {new Date(submission.created_at).toLocaleString('id-ID')}
+                    {new Date(submission.submitted_at || submission.started_at).toLocaleString('id-ID')}
+                  </div>
+                  <div className="flex items-center gap-1.5 text-primary font-black text-[10px] uppercase tracking-widest bg-primary/5 px-3 py-1 rounded-lg">
+                    <Clock className="h-3.5 w-3.5" />
+                    {(() => {
+                      if (!submission.started_at || !submission.submitted_at) return '-'
+                      const start = new Date(submission.started_at).getTime()
+                      const end = new Date(submission.submitted_at).getTime()
+                      const diff = Math.floor((end - start) / 1000)
+                      const m = Math.floor(diff / 60)
+                      const s = diff % 60
+                      return `${m}m ${s}s`
+                    })()}
                   </div>
                   {submission.violations > 0 && (
                     <Badge variant="destructive" className="text-xs">

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client'
 
 import useSWR from 'swr'
@@ -33,37 +34,45 @@ export function useExamResults(examId: string) {
       .from('submissions')
       .select(`
         *,
-        profiles:student_id (full_name)
+        profiles:student_id (full_name),
+        answers (
+          pg_option_id,
+          options (
+            is_correct
+          )
+        )
       `)
       .eq('exam_id', examId)
-      .order('score', { ascending: false }) // Sort by score for ranking
+      .order('score', { ascending: false })
 
     if (subErr) throw subErr
 
-    // 4. Fetch correct answers for each submission
-    const submissionsWithCorrect = await Promise.all(
-      (subData || []).map(async (sub) => {
-        const { count: correctCount } = await supabase
-          .from('answers')
-          .select('*', { count: 'exact', head: true })
-          .eq('submission_id', sub.id)
-          .eq('is_correct', true)
+    // 4. Transform data to include computed fields
+    const submissionsComputed = (subData || []).map(sub => {
+      // Calculate correct answers from joined data
+      const correctCount = sub.answers?.filter((a: any) => a.options?.is_correct).length || 0
 
-        return {
-          ...sub,
-          correct_answers: correctCount || 0
-        }
-      })
-    )
+      // Calculate automated score for PG: (correct / total) * 100
+      // We prioritize stored score if it's > 0, otherwise use calculation
+      const totalQ = totalQuestions || 0
+      const autoScore = totalQ > 0 ? Math.round((correctCount / totalQ) * 100) : 0
+      const finalScore = sub.score !== null && Number(sub.score) > 0 ? Number(sub.score) : autoScore
+
+      return {
+        ...sub,
+        correct_answers: correctCount,
+        score: finalScore
+      }
+    })
 
     // 5. Calculate Stats
-    const validScores = submissionsWithCorrect.filter(s => s.score !== null).map(s => s.score)
+    const validScores = submissionsComputed.map(s => Number(s.score))
     const avg = validScores.length > 0 ? validScores.reduce((a, b) => a + b, 0) / validScores.length : 0
     const high = validScores.length > 0 ? Math.max(...validScores) : 0
 
     return {
       exam: examData,
-      submissions: submissionsWithCorrect,
+      submissions: submissionsComputed,
       has_essay: (essayCount || 0) > 0,
       total_questions: totalQuestions || 0,
       stats: {

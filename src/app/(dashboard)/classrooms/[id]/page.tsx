@@ -1,6 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client'
 
 import { useState, useEffect, use } from 'react'
+import * as XLSX from 'xlsx'
 import { createClient } from '@/utils/supabase/client'
 import {
   Users,
@@ -116,61 +118,66 @@ export default function ClassroomDetailPage({ params }: { params: Promise<{ id: 
     setDeleteId(null)
   }
 
-  const handleExport = () => {
-    if (students.length === 0) return toast.error('Tidak ada data untuk diekspor.')
+  const handleDownloadTemplate = () => {
+    const templateData = [
+      {
+        'Nama Lengkap': 'Contoh Siswa',
+        'Username': 'siswa123',
+        'Password': 'password123'
+      }
+    ]
 
-    const headers = ['Nama Lengkap', 'Username', 'Password']
-    const rows = students.map(s => [s.full_name, s.username, '******'])
-
-    const csvContent = [headers, ...rows].map(e => e.join(',')).join('\n')
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-    const url = URL.createObjectURL(blob)
-
-    const link = document.createElement('a')
-    link.setAttribute('href', url)
-    link.setAttribute('download', `Daftar_Siswa_${classroom.name}.csv`)
-    link.style.visibility = 'hidden'
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+    const worksheet = XLSX.utils.json_to_sheet(templateData)
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Daftar Siswa')
+    XLSX.writeFile(workbook, `Template_Siswa_${classroom?.name || 'Kelas'}.xlsx`)
   }
 
-  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImportExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
     const reader = new FileReader()
-    reader.onload = async (event) => {
-      const text = event.target?.result as string
-      const lines = text.split('\n').filter(line => line.trim() !== '')
+    reader.onload = async (evt) => {
+      try {
+        const bstr = evt.target?.result
+        const wb = XLSX.read(bstr, { type: 'binary' })
+        const wsname = wb.SheetNames[0]
+        const ws = wb.Sheets[wsname]
+        const data = XLSX.utils.sheet_to_json(ws) as any[]
 
-      // Skip header and parse
-      const studentData = lines.slice(1).map(line => {
-        const [full_name, username, password] = line.split(',').map(item => item.trim())
-        return {
+        const studentData = data.map((row: any) => ({
           id: crypto.randomUUID(),
-          full_name,
-          username: username.toLowerCase(),
-          password,
+          full_name: row['Nama Lengkap']?.toString() || '',
+          username: row['Username']?.toString().toLowerCase().trim() || '',
+          password: row['Password']?.toString() || '',
           role: 'student',
           classroom_id: id
+        })).filter(s => s.full_name && s.username)
+
+        if (studentData.length === 0) {
+          toast.error('Tidak ada data siswa yang valid ditemukan.')
+          return
         }
-      })
 
-      if (studentData.length === 0) return
+        setIsImporting(true)
+        const { error } = await supabase.from('profiles').insert(studentData)
 
-      setIsImporting(true)
-      const { error } = await supabase.from('profiles').insert(studentData)
-
-      if (error) {
-        toast.error('Gagal impor: ' + error.message)
-      } else {
-        toast.success(`Berhasil mengimpor ${studentData.length} siswa!`)
-        mutate() // Revalidate SWR
+        if (error) {
+          toast.error('Gagal impor: ' + error.message)
+        } else {
+          toast.success(`Berhasil mengimpor ${studentData.length} siswa!`)
+          mutate()
+        }
+      } catch (err) {
+        console.error('Import Error:', err)
+        toast.error('Gagal mengimpor file Excel. Pastikan format benar.')
+      } finally {
+        setIsImporting(false)
       }
-      setIsImporting(false)
     }
-    reader.readAsText(file)
+    reader.readAsBinaryString(file)
+    e.target.value = ''
   }
 
   if (loading) return <div className="p-8 text-center text-muted-foreground">Memuat data...</div>
@@ -194,10 +201,10 @@ export default function ClassroomDetailPage({ params }: { params: Promise<{ id: 
           <Button
             variant="outline"
             size="sm"
-            onClick={handleExport}
+            onClick={handleDownloadTemplate}
           >
             <Download className="w-4 h-4" />
-            Export CSV
+            Download Template
           </Button>
           <Button
             variant="outline"
@@ -207,8 +214,8 @@ export default function ClassroomDetailPage({ params }: { params: Promise<{ id: 
           >
             <label>
               <Upload className="w-4 h-4" />
-              {isImporting ? 'Importing...' : 'Import CSV'}
-              <input type="file" accept=".csv" onChange={handleImport} className="hidden" />
+              {isImporting ? 'Importing...' : 'Import Excel'}
+              <input type="file" accept=".xlsx, .xls" onChange={handleImportExcel} className="hidden" />
             </label>
           </Button>
         </div>

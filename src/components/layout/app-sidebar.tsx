@@ -63,7 +63,7 @@ export function AppSidebar() {
             <GraduationCap className="h-6 w-6 text-primary-foreground" />
           </div>
           <div className="flex flex-col truncate group-data-[collapsible=icon]:hidden">
-            <span className="text-lg font-bold tracking-tight leading-none">CBT OSN SD</span>
+            <span className="text-lg font-bold tracking-tight leading-none">OSN SD Rajagaluh</span>
             <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold mt-1">v2.0 Beta</span>
           </div>
         </div>

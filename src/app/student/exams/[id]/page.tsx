@@ -22,6 +22,7 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
+import { MathRenderer } from '@/components/ui/math-renderer'
 
 // Shadcn UI Components
 import { Button } from '@/components/ui/button'
@@ -112,7 +113,10 @@ export default function ExamTakePage({ params }: { params: Promise<{ id: string 
     try {
       const { error } = await supabase
         .from('submissions')
-        .update({ status: 'submitted' })
+        .update({
+          status: 'submitted',
+          submitted_at: new Date().toISOString()
+        })
         .eq('id', submission.id)
 
       if (error) throw error
@@ -272,6 +276,19 @@ export default function ExamTakePage({ params }: { params: Promise<{ id: string 
   }
 
   const handleEnterFullscreen = async () => {
+    const now = new Date()
+    if (!exam?.start_time) {
+      toast.error('Jadwal ujian belum ditentukan oleh guru.')
+      return
+    }
+    if (now < new Date(exam.start_time)) {
+      toast.error('Ujian belum dimulai!')
+      return
+    }
+    if (exam.end_time && now > new Date(exam.end_time)) {
+      toast.error('Waktu ujian telah berakhir.')
+      return
+    }
     try {
       if (document.documentElement.requestFullscreen) {
         await document.documentElement.requestFullscreen()
@@ -321,6 +338,53 @@ export default function ExamTakePage({ params }: { params: Promise<{ id: string 
   const totalQuestions = questions.length || 1
   const progressPercent = (answeredCount / totalQuestions) * 100
 
+  // Security Check: Block rendering if not in time or no start time
+  const now = new Date()
+  const isTooEarly = !exam?.start_time || now < new Date(exam.start_time)
+  const isTooLate = exam?.end_time && now > new Date(exam.end_time)
+
+  if (isTooEarly || isTooLate) {
+    return (
+      <div className="fixed inset-0 bg-muted/30 flex flex-col z-50 overflow-hidden items-center justify-center p-4">
+        <div className="max-w-md w-full bg-background rounded-[2.5rem] p-8 text-center shadow-2xl border border-muted-foreground/10">
+          <div className="h-24 w-24 bg-amber-50 rounded-[2rem] flex items-center justify-center mb-8 border border-amber-200 shadow-xl shadow-amber-500/5 mx-auto">
+            <Lock className="h-10 w-10 text-amber-600" />
+          </div>
+          <h2 className="text-3xl font-black text-foreground mb-4 tracking-tighter uppercase leading-none">Akses Terkunci</h2>
+          <div className="text-muted-foreground mb-8 text-base font-medium leading-relaxed">
+            {isTooEarly ? (
+              <div className="p-6 bg-amber-50 border border-amber-200 rounded-3xl text-amber-700 font-bold">
+                {!exam?.start_time ? (
+                  "Jadwal ujian belum ditentukan oleh guru. Sila hubungi guru pengampu."
+                ) : (
+                  <>
+                    Ujian dijadwalkan mulai pada:<br/>
+                    <span className="text-xl font-black block mt-2">
+                      {new Date(exam.start_time).toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' })}
+                    </span>
+                  </>
+                )}
+              </div>
+            ) : (
+              <div className="p-6 bg-rose-50 border border-rose-200 rounded-3xl text-rose-700 font-bold">
+                Ujian telah berakhir pada:<br/>
+                <span className="text-xl font-black block mt-2">
+                  {new Date(exam.end_time!).toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' })}
+                </span>
+              </div>
+            )}
+          </div>
+          <Button
+            onClick={() => router.push('/student')}
+            className="w-full py-7 h-auto bg-primary text-primary-foreground rounded-[1.5rem] font-black text-sm uppercase tracking-[0.2em] shadow-xl shadow-primary/20 hover:bg-primary/90 transition-all transform active:scale-95"
+          >
+            Kembali ke Dashboard
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="fixed inset-0 bg-muted/30 flex flex-col z-50 overflow-hidden">
       <Dialog open={!hasStarted} onOpenChange={() => {}}>
@@ -331,13 +395,30 @@ export default function ExamTakePage({ params }: { params: Promise<{ id: string 
             </div>
             <DialogTitle className="text-3xl font-black text-foreground mb-4 tracking-tighter uppercase leading-none">Lembar Ujian Siap</DialogTitle>
             <DialogDescription className="text-muted-foreground max-w-lg mb-8 text-base font-medium leading-relaxed">
-              Sila klik tombol di bawah untuk masuk ke mode <strong>Layar Penuh</strong> dan memulai pengerjaan soal.
+              {!exam?.start_time ? (
+                <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl text-amber-700 font-bold mb-4">
+                  Jadwal ujian belum ditentukan oleh guru. Sila hubungi guru pengampu.
+                </div>
+              ) : new Date() < new Date(exam.start_time) ? (
+                <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl text-amber-700 font-bold mb-4">
+                  Ujian dijadwalkan mulai pada:<br/>
+                  <span className="text-lg font-black">{new Date(exam.start_time).toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' })}</span>
+                </div>
+              ) : exam.end_time && new Date() > new Date(exam.end_time) ? (
+                <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-rose-700 font-bold mb-4">
+                  Ujian telah berakhir pada:<br/>
+                  <span className="text-lg font-black">{new Date(exam.end_time).toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' })}</span>
+                </div>
+              ) : (
+                <>Sila klik tombol di bawah untuk masuk ke mode <strong>Layar Penuh</strong> dan memulai pengerjaan soal.</>
+              )}
             </DialogDescription>
             <Button
               onClick={handleEnterFullscreen}
-              className="w-full py-7 h-auto bg-primary text-primary-foreground rounded-[1.5rem] font-black text-sm uppercase tracking-[0.2em] shadow-xl shadow-primary/20 hover:bg-primary/90 transition-all transform active:scale-95"
+              disabled={!exam?.start_time || new Date() < new Date(exam.start_time) || (!!exam.end_time && new Date() > new Date(exam.end_time))}
+              className="w-full py-7 h-auto bg-primary text-primary-foreground rounded-[1.5rem] font-black text-sm uppercase tracking-[0.2em] shadow-xl shadow-primary/20 hover:bg-primary/90 transition-all transform active:scale-95 disabled:opacity-50 disabled:grayscale"
             >
-              Mulai Ujian Sekarang
+              {!exam?.start_time ? 'Jadwal Belum Ada' : new Date() < new Date(exam.start_time) ? 'Belum Bisa Dimulai' : (exam.end_time && new Date() > new Date(exam.end_time)) ? 'Ujian Berakhir' : 'Mulai Ujian Sekarang'}
             </Button>
           </div>
         </DialogContent>
@@ -441,7 +522,7 @@ export default function ExamTakePage({ params }: { params: Promise<{ id: string 
               )}
               <Card className="rounded-[2.5rem] border-border/30 shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <CardContent className="p-8 md:p-12 text-xl md:text-2xl font-bold text-foreground leading-relaxed">
-                  {q?.content}
+                  <MathRenderer content={q?.content || ''} />
                 </CardContent>
               </Card>
             </div>
@@ -465,9 +546,9 @@ export default function ExamTakePage({ params }: { params: Promise<{ id: string 
                     )}>
                       {String.fromCharCode(65 + idx)}
                     </div>
-                    <span className={cn("font-bold text-lg leading-tight flex-1 whitespace-normal", isSelected ? 'text-foreground' : 'text-muted-foreground')}>
-                      {opt.content}
-                    </span>
+                    <div className={cn("font-bold text-lg leading-tight flex-1 whitespace-normal", isSelected ? 'text-foreground' : 'text-muted-foreground')}>
+                      <MathRenderer content={opt.content} />
+                    </div>
                     {isSelected && (
                       <div className="absolute top-3 right-3">
                         {savingAnswer === q.id ? (
