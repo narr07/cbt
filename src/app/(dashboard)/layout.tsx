@@ -1,7 +1,8 @@
-'use client'
+"use client"
 
 import { AppSidebar } from '@/components/layout/app-sidebar'
 import { Bell, LogOut, Settings, User } from 'lucide-react'
+import { useProfile } from '@/hooks/use-profile'
 
 // Shadcn UI Components
 import { Button } from '@/components/ui/button'
@@ -26,6 +27,12 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
+  const { profile, isLoading } = useProfile()
+
+  const getInitials = (name: string) => {
+    return name?.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) || 'AD'
+  }
+
   return (
     <SidebarProvider>
       <div className="flex min-h-svh w-full bg-background overflow-hidden">
@@ -35,16 +42,14 @@ export default function DashboardLayout({
             <div className="flex items-center gap-2">
               <SidebarTrigger className="-ml-1" />
               <Separator orientation="vertical" className="mr-2 h-4" />
-              <div className="text-sm text-muted-foreground font-medium hidden sm:block">
-                Selamat datang di <span className="text-foreground font-bold">Portal OSN</span>
+              <div className="text-sm text-muted-foreground font-medium hidden sm:block"> Halo <span className="text-foreground font-bold">
+                {isLoading ? 'Loading...' : (profile?.full_name || 'Administrator')}
+              </span>
+                <br />Selamat datang di Dashboard CBT OSN SD
               </div>
             </div>
 
             <div className="flex items-center gap-4">
-              <Button variant="ghost" size="icon" className="relative text-muted-foreground hover:text-primary">
-                <Bell className="h-5 w-5" />
-                <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-destructive border-2 border-background"></span>
-              </Button>
 
               <div className="h-8 w-px bg-border mx-2" />
 
@@ -56,17 +61,21 @@ export default function DashboardLayout({
                     suppressHydrationWarning
                   >
                     <Avatar className="h-8 w-8 border-2 border-background shadow-sm">
-                      <AvatarImage src="" alt="Admin" />
-                      <AvatarFallback className="bg-primary text-primary-foreground font-bold text-xs">AD</AvatarFallback>
+                      <AvatarImage src={profile?.avatar_url || ''} alt={profile?.full_name || 'Admin'} />
+                      <AvatarFallback className="bg-primary text-primary-foreground font-bold text-xs">
+                        {isLoading ? '...' : getInitials(profile?.full_name || 'Admin')}
+                      </AvatarFallback>
                     </Avatar>
-                    <span className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors hidden md:block">Administrator</span>
+                    <span className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors hidden md:block truncate max-w-[150px]">
+                      {isLoading ? 'Loading...' : (profile?.full_name || 'Administrator')}
+                    </span>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56" align="end">
                   <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">Administrator</p>
-                      <p className="text-xs leading-none text-muted-foreground">admin@portalosn.sch.id</p>
+                      <p className="text-sm font-medium leading-none">{profile?.full_name || 'Administrator'}</p>
+                      <p className="text-xs leading-none text-muted-foreground">@{profile?.username || 'admin'}</p>
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />

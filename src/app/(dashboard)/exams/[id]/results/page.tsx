@@ -85,7 +85,10 @@ export default function ExamResultsPage({ params }: { params: Promise<{ id: stri
     setIsFinishingAll(true)
     const { error } = await supabase
       .from('submissions')
-      .update({ status: 'submitted' })
+      .update({
+        status: 'submitted',
+        submitted_at: new Date().toISOString()
+      })
       .eq('exam_id', examId)
       .eq('status', 'in_progress')
 

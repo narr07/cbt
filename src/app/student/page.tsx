@@ -123,60 +123,70 @@ export default function StudentDashboard() {
                 </CardContent>
               </Card>
             ) : (
-              exams.map((exam) => (
-                <Card key={exam.id} className="rounded-[2rem] border-border/50 shadow-sm hover:shadow-xl hover:shadow-primary/5 transition-all group flex flex-col justify-between overflow-hidden">
-                  <CardHeader className="p-8 pb-3">
-                    <div className="flex items-center justify-between mb-6">
-                      <Badge className="bg-primary/10 text-primary border-none text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-primary/20 px-3 py-1 transition-colors">
-                        {exam.subjects?.name}
-                      </Badge>
-                      <div className="flex items-center gap-1.5 text-muted-foreground">
-                        <Clock className="h-3.5 w-3.5" />
-                        <span className="text-[10px] font-bold">{exam.duration} Menit</span>
+                exams.map((exam) => {
+                const now = new Date()
+                const startTime = exam.start_time ? new Date(exam.start_time) : null
+                const endTime = exam.end_time ? new Date(exam.end_time) : null
+
+                const isTooEarly = startTime ? now < startTime : true
+                const isEnded = endTime ? now > endTime : false
+                const isDisabled = isTooEarly || isEnded
+
+                return (
+                  <Card key={exam.id} className="rounded-[2rem] border-border/50 shadow-sm hover:shadow-xl hover:shadow-primary/5 transition-all group flex flex-col justify-between overflow-hidden">
+                    <CardHeader className="p-8 pb-3">
+                      <div className="flex items-center justify-between mb-6">
+                        <Badge className="bg-primary/10 text-primary border-none text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-primary/20 px-3 py-1 transition-colors">
+                          {exam.subjects?.name}
+                        </Badge>
+                        <div className="flex items-center gap-1.5 text-muted-foreground">
+                          <Clock className="h-3.5 w-3.5" />
+                          <span className="text-[10px] font-bold">{exam.duration} Menit</span>
+                        </div>
                       </div>
-                    </div>
-                    <CardTitle className="text-xl font-bold text-foreground group-hover:text-primary transition-colors leading-snug tracking-tight">
-                      {exam.title}
-                    </CardTitle>
-                    {exam.start_time && new Date() < new Date(exam.start_time) && (
-                      <div className="mt-4 p-3 bg-amber-50 rounded-xl border border-amber-100">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-amber-600 mb-1">Mulai Pada</p>
-                        <p className="text-xs font-bold text-amber-700">
-                          {new Date(exam.start_time).toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' })}
-                        </p>
-                      </div>
-                    )}
-                    {exam.end_time && (
-                      <div className="mt-2 p-3 bg-rose-50 rounded-xl border border-rose-100">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-rose-600 mb-1">Berakhir Pada</p>
-                        <p className="text-xs font-bold text-rose-700">
-                          {new Date(exam.end_time).toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' })}
-                        </p>
-                      </div>
-                    )}
-                  </CardHeader>
-                  <CardContent className="p-8 pt-6">
-                    <Button
-                      asChild={!(!exam.start_time || new Date() < new Date(exam.start_time) || (exam.end_time && new Date() > new Date(exam.end_time)))}
-                      disabled={!exam.start_time || new Date() < new Date(exam.start_time) || (exam.end_time && new Date() > new Date(exam.end_time))}
-                      className="w-full h-14 bg-primary text-primary-foreground rounded-2xl font-bold shadow-lg shadow-primary/20 gap-2 hover:opacity-90 transition-all transform active:scale-95 border-none disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none"
-                    >
-                      {!exam.start_time ? (
-                        <span>Jadwal Belum Ada</span>
-                      ) : new Date() < new Date(exam.start_time) ? (
-                        <span>Belum Bisa Dimulai</span>
-                      ) : exam.end_time && new Date() > new Date(exam.end_time) ? (
-                        <span>Ujian Berakhir</span>
-                      ) : (
-                        <Link href={`/student/exams/${exam.id}`} className="flex items-center gap-2">
-                          Mulai Ujian
-                          <Play className="h-4 w-4 fill-current" />
-                        </Link>
+                      <CardTitle className="text-xl font-bold text-foreground group-hover:text-primary transition-colors leading-snug tracking-tight">
+                        {exam.title}
+                      </CardTitle>
+                      {startTime && now < startTime && (
+                        <div className="mt-4 p-3 bg-amber-50 rounded-xl border border-amber-100">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-amber-600 mb-1">Mulai Pada</p>
+                          <p className="text-xs font-bold text-amber-700">
+                            {startTime.toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' })}
+                          </p>
+                        </div>
                       )}
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))
+                      {endTime && (
+                        <div className="mt-2 p-3 bg-rose-50 rounded-xl border border-rose-100">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-rose-600 mb-1">Berakhir Pada</p>
+                          <p className="text-xs font-bold text-rose-700">
+                            {endTime.toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' })}
+                          </p>
+                        </div>
+                      )}
+                    </CardHeader>
+                    <CardContent className="p-8 pt-6">
+                      <Button
+                        asChild={!isDisabled}
+                        disabled={isDisabled}
+                        className="w-full h-14 bg-primary text-primary-foreground rounded-2xl font-bold shadow-lg shadow-primary/20 gap-2 hover:opacity-90 transition-all transform active:scale-95 border-none disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none"
+                      >
+                        {!startTime ? (
+                          <span>Jadwal Belum Ada</span>
+                        ) : now < startTime ? (
+                          <span>Belum Bisa Dimulai</span>
+                        ) : endTime && now > endTime ? (
+                          <span>Ujian Berakhir</span>
+                        ) : (
+                          <Link href={`/student/exams/${exam.id}`} className="flex items-center gap-2">
+                            Mulai Ujian
+                            <Play className="h-4 w-4 fill-current" />
+                          </Link>
+                        )}
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )
+              })
             )}
           </div>
         </div>

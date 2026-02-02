@@ -44,10 +44,13 @@ const navigation = [
   { name: 'Pengaturan', href: '/settings', icon: Settings },
 ]
 
+import { useProfile } from '@/hooks/use-profile'
+
 export function AppSidebar() {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
+  const { profile, isLoading } = useProfile()
 
   const handleLogout = async () => {
     // Clear custom cookie
@@ -55,12 +58,16 @@ export function AppSidebar() {
     router.push('/login')
   }
 
+  const getInitials = (name: string) => {
+    return name?.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) || 'AD'
+  }
+
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="h-20 border-b border-sidebar-border/50 justify-center px-6">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary shadow-lg shadow-primary/20">
-            <GraduationCap className="h-6 w-6 text-primary-foreground" />
+      <SidebarHeader className="h-20 border-b border-sidebar-border/50 justify-center px-6 group-data-[collapsible=icon]:px-0">
+        <div className="flex items-center gap-3 group-data-[collapsible=icon]:justify-center">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary shadow-lg shadow-primary/20 group-data-[collapsible=icon]:h-9 group-data-[collapsible=icon]:w-9">
+            <GraduationCap className="h-6 w-6 text-primary-foreground group-data-[collapsible=icon]:h-5 group-data-[collapsible=icon]:w-5" />
           </div>
           <div className="flex flex-col truncate group-data-[collapsible=icon]:hidden">
             <span className="text-lg font-bold tracking-tight leading-none">OSN SD Rajagaluh</span>
@@ -114,12 +121,20 @@ export function AppSidebar() {
                   size="lg"
                   className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground rounded-xl"
                 >
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                    <User className="h-4 w-4" />
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary overflow-hidden shrink-0">
+                    {profile?.avatar_url ? (
+                      <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <span className="text-[10px] font-bold">
+                        {isLoading ? '...' : getInitials(profile?.full_name || 'Admin')}
+                      </span>
+                    )}
                   </div>
-                  <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
-                    <span className="truncate font-semibold">Administrator</span>
-                    <span className="truncate text-xs text-muted-foreground">Admin Portal</span>
+                  <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden overflow-hidden">
+                    <span className="truncate font-semibold">{isLoading ? 'Loading...' : (profile?.full_name || 'Administrator')}</span>
+                    <span className="truncate text-xs text-muted-foreground uppercase tracking-widest font-bold">
+                      {isLoading ? '...' : (profile?.role || 'Admin Portal')}
+                    </span>
                   </div>
                   <ChevronRight className="ml-auto h-4 w-4 transition-transform group-data-[state=open]:rotate-90 group-data-[collapsible=icon]:hidden" />
                 </SidebarMenuButton>

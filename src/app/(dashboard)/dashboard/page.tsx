@@ -264,36 +264,9 @@ export default function DashboardPage() {
 
         {/* Recently Finished Section */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CheckCircle2 className="h-5 w-5 text-emerald-500" />
-              Aktivitas Selesai Terbaru
-            </CardTitle>
-          </CardHeader>
+
           <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {recentExams.length === 0 ? (
-                 <div className="text-center text-muted-foreground py-12 italic col-span-full border border-dashed rounded-xl">
-                   Belum ada aktivitas selesai baru-baru ini.
-                 </div>
-              ) : (
-                recentExams.map((sub) => (
-                  <div key={sub.id} className="flex gap-4 p-4 rounded-xl bg-muted/50 border items-center hover:bg-muted transition-colors">
-                    <div className="h-10 w-10 shrink-0 bg-emerald-100 rounded-xl flex items-center justify-center text-emerald-600">
-                      <CheckCircle2 className="h-5 w-5" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-bold truncate uppercase tracking-tight">{sub.profiles?.full_name}</h4>
-                      <p className="text-[10px] text-muted-foreground truncate">{sub.exams?.title}</p>
-                      <div className="flex items-center gap-1.5 mt-1 text-[9px] font-bold text-muted-foreground uppercase tracking-widest leading-none">
-                         <Clock className="h-3 w-3" />
-                         {new Date(sub.updated_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
+
             <Button variant="outline" className="w-full" asChild>
               <Link href="/exams">
                 Kelola Semua Ujian <ArrowRight className="h-4 w-4" />

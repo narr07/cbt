@@ -48,6 +48,23 @@ export function useExamResults(examId: string) {
     if (subErr) throw subErr
 
     // 4. Transform data to include computed fields
+    const calculateWorkDuration = (start: any, end: any): string => {
+      if (!start || !end) return '-'
+      const startDate = new Date(start)
+      const endDate = new Date(end)
+
+      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) return '-'
+
+      const diffMs = endDate.getTime() - startDate.getTime()
+      if (diffMs <= 0) return '0s'
+
+      const totalSecs = Math.floor(diffMs / 1000)
+      const mins = Math.floor(totalSecs / 60)
+      const secs = totalSecs % 60
+
+      return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`
+    }
+
     const submissionsComputed = (subData || []).map(sub => {
       // Calculate correct answers from joined data
       const correctCount = sub.answers?.filter((a: any) => a.options?.is_correct).length || 0
@@ -61,7 +78,8 @@ export function useExamResults(examId: string) {
       return {
         ...sub,
         correct_answers: correctCount,
-        score: finalScore
+        score: finalScore,
+        work_duration: calculateWorkDuration(sub.started_at, sub.status === 'submitted' ? sub.submitted_at : null)
       }
     })
 
