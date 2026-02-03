@@ -17,10 +17,10 @@ import {
 import Link from 'next/link'
 import Image from 'next/image'
 
-// Shadcn UI Components
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { ExportPDFButton } from '@/components/pdf/ExportPDFButton'
 
 interface SubmissionDetail {
   id: string
@@ -66,16 +66,24 @@ export default function SubmissionDetailPage({ params }: { params: Promise<{ id:
   return (
     <div className="max-w-5xl mx-auto space-y-8 animate-fade-in pb-20">
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" asChild>
-          <Link href={`/exams/${examId}/results`}>
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
-        </Button>
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Detail Jawaban Siswa</h1>
-          <p className="text-sm text-muted-foreground">{submission.exams.title}</p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" asChild>
+            <Link href={`/exams/${examId}/results`}>
+              <ArrowLeft className="h-5 w-5" />
+            </Link>
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Detail Jawaban Siswa</h1>
+            <p className="text-sm text-muted-foreground">{submission.exams.title}</p>
+          </div>
         </div>
+        <ExportPDFButton
+          submission={submission as any}
+          answers={answers as any}
+          schoolName="OLIMPIADE SAINS NASIONAL"
+          schoolAddress="Kec. Rajagaluh Kab. Majalengka"
+        />
       </div>
 
       {/* Student Summary Card */}
@@ -181,9 +189,10 @@ export default function SubmissionDetailPage({ params }: { params: Promise<{ id:
                 <CardContent className="p-6">
                   <div className="grid grid-cols-1 md:grid-cols-12 gap-10">
                     <div className="md:col-span-8 space-y-6">
-                      <p className="text-lg font-bold leading-relaxed">
-                        {ans.questions.content}
-                      </p>
+                      <div
+                        className="text-lg font-bold leading-relaxed prose prose-lg max-w-none dark:prose-invert"
+                        dangerouslySetInnerHTML={{ __html: ans.questions.content }}
+                      />
 
                       {ans.questions.image_url && (
                         <div className="bg-muted p-4 rounded-xl inline-block">
@@ -220,14 +229,15 @@ export default function SubmissionDetailPage({ params }: { params: Promise<{ id:
                                }`}>
                                  {String.fromCharCode(65 + oIdx)}
                                </div>
-                               <span className={`font-bold transition-all ${
-                                 isStudentChoice && isTheCorrectOn ? 'text-emerald-900' :
-                                 isStudentChoice && !isTheCorrectOn ? 'text-red-900' :
-                                 !isStudentChoice && isTheCorrectOn ? 'text-emerald-700' :
-                                 'text-muted-foreground'
-                               }`}>
-                                 {opt.content}
-                               </span>
+                               <span
+                                 className={`font-bold transition-all prose prose-sm max-w-none ${
+                                   isStudentChoice && isTheCorrectOn ? 'text-emerald-900' :
+                                   isStudentChoice && !isTheCorrectOn ? 'text-red-900' :
+                                   !isStudentChoice && isTheCorrectOn ? 'text-emerald-700' :
+                                   'text-muted-foreground'
+                                 }`}
+                                 dangerouslySetInnerHTML={{ __html: opt.content }}
+                               />
                                {isStudentChoice && <div className="ml-auto"><AlertCircle className={`h-4 w-4 ${isTheCorrectOn ? 'text-emerald-500' : 'text-red-500'}`} /></div>}
                             </div>
                           )
@@ -241,15 +251,17 @@ export default function SubmissionDetailPage({ params }: { params: Promise<{ id:
                           <div className="space-y-4">
                             <div>
                                <p className="text-xs text-muted-foreground font-bold uppercase mb-1">Jawaban Siswa</p>
-                               <p className={`text-sm font-bold ${isCorrect ? 'text-emerald-600' : 'text-red-600'}`}>
-                                 {studentOption?.content || 'Tidak menjawab'}
-                               </p>
+                               <div
+                                 className={`text-sm font-bold prose prose-sm max-w-none ${isCorrect ? 'text-emerald-600' : 'text-red-600'}`}
+                                 dangerouslySetInnerHTML={{ __html: studentOption?.content || 'Tidak menjawab' }}
+                               />
                             </div>
                             <div>
                                <p className="text-xs text-muted-foreground font-bold uppercase mb-1">Jawaban Benar</p>
-                               <p className="text-sm font-bold text-emerald-600">
-                                 {correctOption?.content || 'N/A'}
-                               </p>
+                               <div
+                                 className="text-sm font-bold text-emerald-600 prose prose-sm max-w-none"
+                                 dangerouslySetInnerHTML={{ __html: correctOption?.content || 'N/A' }}
+                               />
                             </div>
                           </div>
                        </div>
