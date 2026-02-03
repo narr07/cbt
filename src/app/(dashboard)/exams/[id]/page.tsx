@@ -7,10 +7,8 @@ import { createClient } from '@/utils/supabase/client'
 import {
   Plus,
   Trash2,
-  Image as ImageIcon,
   GripVertical,
   ChevronLeft,
-
   Save,
   Rocket,
   CheckCircle2,
@@ -26,6 +24,7 @@ import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { MathRenderer } from '@/components/ui/math-renderer'
+import { TiptapEditor } from '@/components/editor/TiptapEditor'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -91,7 +90,6 @@ export default function ExamEditorPage({ params }: { params: Promise<{ id: strin
   const [questions, setQuestions] = useState<Question[]>([])
   const [saving, setSaving] = useState(false)
   const [publishing, setPublishing] = useState(false)
-  const [uploadingId, setUploadingId] = useState<string | null>(null)
   const [previewingQuestion, setPreviewingQuestion] = useState<Question | null>(null)
   const [showPublishDialog, setShowPublishDialog] = useState(false)
   const [portalNode, setPortalNode] = useState<Element | null>(null)
@@ -132,37 +130,6 @@ export default function ExamEditorPage({ params }: { params: Promise<{ id: strin
     setQuestions(questions.map(q => q.id === qId ? { ...q, [field]: value } : q))
   }
 
-  const handleImageUpload = async (qId: string, e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-
-    setUploadingId(qId)
-    try {
-      const fileExt = file.name.split('.').pop()
-      const fileName = `${id}/${qId}-${Date.now()}.${fileExt}`
-
-      const { data, error } = await supabase.storage
-        .from('exam-images')
-        .upload(fileName, file)
-
-      if (error) throw error
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('exam-images')
-        .getPublicUrl(fileName)
-
-      setQuestions(questions.map(q => q.id === qId ? { ...q, image_url: publicUrl } : q))
-    } catch (err: unknown) {
-      const error = err as { message: string }
-      toast.error('Gagal upload gambar: ' + error.message)
-    } finally {
-      setUploadingId(null)
-    }
-  }
-
-  const handleRemoveImage = (qId: string) => {
-    setQuestions(questions.map(q => q.id === qId ? { ...q, image_url: undefined } : q))
-  }
 
   const handleOptionChange = (qId: string, optId: string, field: keyof QuestionOption, value: string | boolean) => {
     setQuestions(questions.map(q => {
@@ -431,7 +398,7 @@ export default function ExamEditorPage({ params }: { params: Promise<{ id: strin
               )}
               <div className="text-xl font-bold leading-relaxed bg-muted/50 p-6 rounded-xl">
                 {previewingQuestion.content ? (
-                  <MathRenderer content={previewingQuestion.content} />
+                  <div dangerouslySetInnerHTML={{ __html: previewingQuestion.content }} className="prose prose-sm max-w-none dark:prose-invert" />
                 ) : (
                   <span className="text-muted-foreground italic">Belum ada teks pertanyaan...</span>
                 )}
@@ -446,7 +413,7 @@ export default function ExamEditorPage({ params }: { params: Promise<{ id: strin
                       </div>
                       <div className="font-medium flex-1">
                         {opt.content ? (
-                          <MathRenderer content={opt.content} />
+                          <div dangerouslySetInnerHTML={{ __html: opt.content }} className="prose prose-sm max-w-none dark:prose-invert" />
                         ) : (
                           <span className="text-muted-foreground italic">Opsi kosong...</span>
                         )}
@@ -582,52 +549,17 @@ export default function ExamEditorPage({ params }: { params: Promise<{ id: strin
                 <CardContent className="p-6 space-y-6">
                   <div className="space-y-2">
                     <Label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Isi Pertanyaan</Label>
-                    <textarea
-                      value={q.content}
-                      onChange={(e) => handleQuestionChange(q.id, 'content', e.target.value)}
-                      className="w-full bg-muted/30 border rounded-xl p-4 text-foreground font-medium focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all min-h-[120px] placeholder:text-muted-foreground"
+                    <TiptapEditor
+                      content={q.content}
+                      onChange={(html) => handleQuestionChange(q.id, 'content', html)}
                       placeholder="Ketikkan teks soal di sini..."
+                      examId={id}
+                      questionId={q.id}
+                      minHeight="120px"
                     />
                   </div>
 
-                  {q.image_url && (
-                    <div className="relative w-fit group/img">
-                       <Image
-                        src={q.image_url}
-                        alt="Question"
-                        width={800}
-                        height={600}
-                        className="max-h-64 w-auto rounded-xl border shadow-md"
-                       />
-                       <Button
-                        variant="destructive"
-                        size="icon-xs"
-                        onClick={() => handleRemoveImage(q.id)}
-                        className="absolute -top-2 -right-2 opacity-0 group-hover/img:opacity-100 transition-opacity"
-                       >
-                         <X className="h-3 w-3" />
-                       </Button>
-                    </div>
-                  )}
-
                   <div className="flex flex-wrap items-center gap-4">
-                    <input
-                      type="file"
-                      id={`file-${q.id}`}
-                      className="hidden"
-                      accept="image/*"
-                      onChange={(e) => handleImageUpload(q.id, e)}
-                    />
-                    <Button variant="secondary" size="sm" asChild>
-                      <label htmlFor={`file-${q.id}`} className="cursor-pointer">
-                         {uploadingId === q.id ? (
-                           <Loader2 className="h-4 w-4 animate-spin" />
-                         ) : (
-                           <ImageIcon className="h-4 w-4" />
-                         )}
-                         {q.image_url ? 'Ganti Gambar' : 'Tambah Gambar'}
-                      </label>
-                    </Button>
                     <div className="flex items-center gap-2 bg-muted px-3 py-1.5 rounded-lg">
                       <span className="text-xs font-bold text-muted-foreground uppercase">Poin:</span>
                       <Input
@@ -656,12 +588,14 @@ export default function ExamEditorPage({ params }: { params: Promise<{ id: strin
                             >
                               {opt.is_correct ? <CheckCircle2 className="h-5 w-5" /> : String.fromCharCode(65 + oIdx)}
                             </Button>
-                            <Input
-                              type="text"
-                              value={opt.content}
-                              onChange={(e) => handleOptionChange(q.id, opt.id, 'content', e.target.value)}
-                              className={opt.is_correct ? 'border-emerald-200 ring-2 ring-emerald-500/10' : ''}
+                            <TiptapEditor
+                              content={opt.content}
+                              onChange={(html) => handleOptionChange(q.id, opt.id, 'content', html)}
                               placeholder={`Opsi ${String.fromCharCode(65 + oIdx)}`}
+                              examId={id}
+                              questionId={q.id}
+                              className={opt.is_correct ? 'border-emerald-200 ring-2 ring-emerald-500/10' : ''}
+                              minHeight="60px"
                             />
                             <Button
                               variant="ghost"

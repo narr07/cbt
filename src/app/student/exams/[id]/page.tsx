@@ -516,8 +516,15 @@ export default function ExamTakePage({ params }: { params: Promise<{ id: string 
                 </Card>
               )}
               <Card className="rounded-lg border-border/60 shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <CardContent className="px-8 tracking-wide   text-lg font-medium text-black leading-relaxed">
-                  <MathRenderer content={q?.content || ''} />
+                <CardContent className="px-8 py-6">
+                  {q?.content ? (
+                    <div
+                      dangerouslySetInnerHTML={{ __html: q.content }}
+                      className="prose prose-lg max-w-none dark:prose-invert tracking-wide leading-relaxed"
+                    />
+                  ) : (
+                    <span className="text-muted-foreground italic">Belum ada teks pertanyaan...</span>
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -541,8 +548,15 @@ export default function ExamTakePage({ params }: { params: Promise<{ id: string 
                     )}>
                       {String.fromCharCode(65 + idx)}
                     </div>
-                    <div className={cn("font-bold text-lg leading-tight flex-1 whitespace-normal", isSelected ? 'text-primary-heading' : 'text-black')}>
-                      <MathRenderer content={opt.content} />
+                    <div className="flex-1 whitespace-normal">
+                      {opt.content ? (
+                        <div
+                          dangerouslySetInnerHTML={{ __html: opt.content }}
+                          className="prose prose-base max-w-none dark:prose-invert font-bold text-lg leading-tight"
+                        />
+                      ) : (
+                        <span className="text-muted-foreground italic">Opsi kosong</span>
+                      )}
                     </div>
                     {isSelected && (
                       <div className="absolute top-3 right-3">
