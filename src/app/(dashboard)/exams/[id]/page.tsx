@@ -398,7 +398,7 @@ export default function ExamEditorPage({ params }: { params: Promise<{ id: strin
               )}
               <div className="text-xl font-bold leading-relaxed bg-muted/50 p-6 rounded-xl">
                 {previewingQuestion.content ? (
-                  <div dangerouslySetInnerHTML={{ __html: previewingQuestion.content }} className="prose prose-sm max-w-none dark:prose-invert" />
+                  <MathRenderer content={previewingQuestion.content} className="prose prose-sm max-w-none dark:prose-invert" />
                 ) : (
                   <span className="text-muted-foreground italic">Belum ada teks pertanyaan...</span>
                 )}
@@ -413,7 +413,7 @@ export default function ExamEditorPage({ params }: { params: Promise<{ id: strin
                       </div>
                       <div className="font-medium flex-1">
                         {opt.content ? (
-                          <div dangerouslySetInnerHTML={{ __html: opt.content }} className="prose prose-sm max-w-none dark:prose-invert" />
+                          <MathRenderer content={opt.content} className="prose prose-sm max-w-none dark:prose-invert" />
                         ) : (
                           <span className="text-muted-foreground italic">Opsi kosong...</span>
                         )}

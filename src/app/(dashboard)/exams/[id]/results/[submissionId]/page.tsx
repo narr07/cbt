@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { MathRenderer } from '@/components/ui/math-renderer'
 
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -189,13 +190,13 @@ export default function SubmissionDetailPage({ params }: { params: Promise<{ id:
                 <CardContent className="p-6">
                   <div className="grid grid-cols-1 md:grid-cols-12 gap-10">
                     <div className="md:col-span-8 space-y-6">
-                      <div
+                      <MathRenderer
+                        content={ans.questions.content}
                         className="text-lg font-bold leading-relaxed prose prose-lg max-w-none dark:prose-invert"
-                        dangerouslySetInnerHTML={{ __html: ans.questions.content }}
                       />
 
                       {ans.questions.image_url && (
-                        <div className="bg-muted p-4 rounded-xl inline-block">
+                        <div className="bg-muted p-4 rounded-xl inline-block mt-4">
                           <Image
                             src={ans.questions.image_url}
                             alt="Question"
@@ -229,14 +230,14 @@ export default function SubmissionDetailPage({ params }: { params: Promise<{ id:
                                }`}>
                                  {String.fromCharCode(65 + oIdx)}
                                </div>
-                               <span
+                               <MathRenderer
+                                 content={opt.content}
                                  className={`font-bold transition-all prose prose-sm max-w-none ${
                                    isStudentChoice && isTheCorrectOn ? 'text-emerald-900' :
                                    isStudentChoice && !isTheCorrectOn ? 'text-red-900' :
                                    !isStudentChoice && isTheCorrectOn ? 'text-emerald-700' :
                                    'text-muted-foreground'
                                  }`}
-                                 dangerouslySetInnerHTML={{ __html: opt.content }}
                                />
                                {isStudentChoice && <div className="ml-auto"><AlertCircle className={`h-4 w-4 ${isTheCorrectOn ? 'text-emerald-500' : 'text-red-500'}`} /></div>}
                             </div>
@@ -251,16 +252,16 @@ export default function SubmissionDetailPage({ params }: { params: Promise<{ id:
                           <div className="space-y-4">
                             <div>
                                <p className="text-xs text-muted-foreground font-bold uppercase mb-1">Jawaban Siswa</p>
-                               <div
+                               <MathRenderer
+                                 content={studentOption?.content || 'Tidak menjawab'}
                                  className={`text-sm font-bold prose prose-sm max-w-none ${isCorrect ? 'text-emerald-600' : 'text-red-600'}`}
-                                 dangerouslySetInnerHTML={{ __html: studentOption?.content || 'Tidak menjawab' }}
                                />
                             </div>
                             <div>
                                <p className="text-xs text-muted-foreground font-bold uppercase mb-1">Jawaban Benar</p>
-                               <div
+                               <MathRenderer
+                                 content={correctOption?.content || 'N/A'}
                                  className="text-sm font-bold text-emerald-600 prose prose-sm max-w-none"
-                                 dangerouslySetInnerHTML={{ __html: correctOption?.content || 'N/A' }}
                                />
                             </div>
                           </div>

@@ -518,8 +518,8 @@ export default function ExamTakePage({ params }: { params: Promise<{ id: string 
               <Card className="rounded-lg border-border/60 shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <CardContent className="px-8 py-6">
                   {q?.content ? (
-                    <div
-                      dangerouslySetInnerHTML={{ __html: q.content }}
+                    <MathRenderer
+                      content={q.content}
                       className="prose prose-lg max-w-none dark:prose-invert tracking-wide leading-relaxed"
                     />
                   ) : (
@@ -550,8 +550,8 @@ export default function ExamTakePage({ params }: { params: Promise<{ id: string 
                     </div>
                     <div className="flex-1 whitespace-normal">
                       {opt.content ? (
-                        <div
-                          dangerouslySetInnerHTML={{ __html: opt.content }}
+                        <MathRenderer
+                          content={opt.content}
                           className="prose prose-base max-w-none dark:prose-invert font-bold text-lg leading-tight"
                         />
                       ) : (
